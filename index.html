@@ -69,23 +69,39 @@
           <h3>Parameters</h3>
 
           <label>
-            <span>\(n\) (message bits): <output x-text="n"></output></span>
+            <span>\(n\) (message bits): <output x-text="n"></output>
+              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-n">i</button></span>
+            <span class="tooltip" role="tooltip" id="lamport-tip-n">
+              Length of the signed message in bits. Each bit has two secret values, so key and signature sizes grow linearly with \(n\).
+            </span>
             <input type="range" min="1" max="512" step="1" x-model.number="n">
           </label>
 
           <label>
-            <span>\(N\) (hash output bits): <output x-text="N"></output></span>
+            <span>\(N\) (hash output bits): <output x-text="N"></output>
+              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-N">i</button></span>
+            <span class="tooltip" role="tooltip" id="lamport-tip-N">
+              Output length of the hash function in bits. Every secret value, public key element, and signature element is \(N\) bits.
+            </span>
             <input type="range" min="8" max="256" step="8" x-model.number="N">
           </label>
 
           <label class="toggle">
             <input type="checkbox" x-model="tweakable">
-            <span>Tweakable hash function</span>
+            <span>Tweakable hash function
+              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-tweak">i</button></span>
+            <span class="tooltip" role="tooltip" id="lamport-tip-tweak">
+              Each hash call also takes a public parameter \(P\) and a tweak encoding its position \((i, b)\). A brute-force guess then targets one public key element instead of any of them.
+            </span>
           </label>
 
           <label class="toggle">
             <input type="checkbox" x-model="seedBased">
-            <span>Seed-based generation of secret keys</span>
+            <span>Seed-based generation of secret keys
+              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-seed">i</button></span>
+            <span class="tooltip" role="tooltip" id="lamport-tip-seed">
+              Secret values are derived from one seed with a \(\mathbf{PRF}\) instead of being stored. The secret key shrinks to the seed, and signing recomputes the revealed values.
+            </span>
           </label>
         </aside>
 
@@ -93,6 +109,12 @@
           <h3>Visualization</h3>
 
           <div class="lamport-grid">
+            <div class="key-brackets">
+              <div class="spacer"></div>
+              <div class="key-bracket">Secret<br>key</div>
+              <div class="spacer arrow"></div>
+              <div class="key-bracket">Public<br>key</div>
+            </div>
             <div class="lamport-col lamport-legend">
               <div class="cell label">\(m_i\)</div>
               <div class="cell label">\(sk_{i,0}\)</div>

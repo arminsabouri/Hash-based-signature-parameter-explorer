@@ -161,3 +161,62 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 .context, .scheme-intro { overflow-wrap: anywhere; }
 
 .cell .katex, .col-index .katex { font-size: 1em; }
+
+/* Parameter tooltips */
+.parameters label { position: relative; }
+.tooltip-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  margin-left: 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color);
+  font: italic 0.7rem/1 Georgia, serif;
+  cursor: help;
+  vertical-align: middle;
+}
+.parameters .tooltip {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--background-color);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.parameters label:has(.tooltip-icon:hover, .tooltip-icon:focus-visible) .tooltip { display: block; }
+
+/* Key brackets in the Lamport grid */
+.key-brackets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.key-brackets .spacer { height: 2rem; }
+.key-brackets .spacer.arrow { height: 1.25rem; }
+.key-bracket {
+  height: 4.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  text-align: right;
+  line-height: 1.2;
+}
+.key-bracket::after {
+  content: "";
+  width: 0.4rem;
+  align-self: stretch;
+  border: 2px solid var(--border-color);
+  border-right: none;
+  border-radius: 3px 0 0 3px;
+}
