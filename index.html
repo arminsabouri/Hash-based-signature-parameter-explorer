@@ -61,7 +61,8 @@
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
         value \(sk_{i,m_i}\). The verifier hashes each revealed value and compares it with
-        \(pk_{i,m_i}\).
+        \(pk_{i,m_i}\). All hashing uses a tweakable hash function \(\mathrm{Th}(P, (i, b), \cdot)\), which binds each
+        public key element to its position \((i, b)\) through a public parameter \(P\) and a tweak.
       </p>
 
       <div class="explorer">
@@ -84,15 +85,6 @@
               Output length of the hash function in bits. Every secret value, public key element, and signature element is \(N\) bits.
             </span>
             <input type="range" min="8" max="256" step="8" x-model.number="N">
-          </label>
-
-          <label class="toggle">
-            <input type="checkbox" x-model="tweakable">
-            <span>Tweakable hash function
-              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-tweak">i</button></span>
-            <span class="tooltip" role="tooltip" id="lamport-tip-tweak">
-              Each hash call also takes a public parameter \(P\) and a tweak encoding its position \((i, b)\). A brute-force guess then targets one public key element instead of any of them.
-            </span>
           </label>
 
           <label class="toggle">
@@ -119,7 +111,7 @@
               <div class="cell label">\(m_i\)</div>
               <div class="cell label">\(sk_{i,0}\)</div>
               <div class="cell label">\(sk_{i,1}\)</div>
-              <div class="cell label arrow"><span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span></div>
+              <div class="cell label arrow">\(\mathrm{Th}\)</div>
               <div class="cell label">\(pk_{i,0}\)</div>
               <div class="cell label">\(pk_{i,1}\)</div>
             </div>
@@ -165,7 +157,7 @@
             <dt>Key generation</dt>
             <dd>
               <span x-text="num(keygenHashCalls)"></span>
-              <span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span>
+              \(\mathrm{Th}\)
               <span x-show="keygenPrfCalls">+ <span x-text="num(keygenPrfCalls)"></span> \(\mathbf{PRF}\)</span>
             </dd>
             <dt>Signing</dt>
@@ -176,11 +168,11 @@
             <dt>Verification</dt>
             <dd>
               <span x-text="num(verifyHashCalls)"></span>
-              <span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span>
+              \(\mathrm{Th}\)
             </dd>
           </dl>
 
-          <h4>SHA-256 compressions <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-compr">i</button><span class="tooltip" role="tooltip" id="lamport-tip-compr">An \(L\)-byte input costs \(\lceil (L+9)/64 \rceil\) compressions. Tweakable calls follow FIPS 205: a cached \(\mathrm{PK.seed}\) block, then a 22-byte \(\mathrm{ADRS}^c\) and the input. The cached block adds one compression per operation.</span></h4>
+          <h4>SHA-256 compressions <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-compr">i</button><span class="tooltip" role="tooltip" id="lamport-tip-compr">An \(L\)-byte input costs \(\lceil (L+9)/64 \rceil\) compressions. Calls follow FIPS 205: a cached \(\mathrm{PK.seed}\) block, then a 22-byte \(\mathrm{ADRS}^c\) and the input. The cached block adds one compression per operation.</span></h4>
           <dl>
             <dt>Key generation</dt>
             <dd x-text="num(keygenCompressions)"></dd>
