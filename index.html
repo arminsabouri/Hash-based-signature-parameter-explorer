@@ -69,8 +69,8 @@
       <p class="scheme-intro">
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
-        value \(sk_{i,m_i}\). The verifier hashes each revealed value and compares it with
-        \(pk_{i,m_i}\). All hashing uses a tweakable hash function \(\mathrm{Th}(P, (i, b), \cdot)\), which binds each
+        value <strong>\(\boldsymbol{sk_{i,m_i}}\)</strong>. The verifier hashes each revealed value and compares it with
+        <strong>\(\boldsymbol{pk_{i,m_i}}\)</strong>. All hashing uses a tweakable hash function <strong>\(\boldsymbol{\mathbf{Th}(P, (i, b), \cdot)}\)</strong>, which binds each
         public key element to its position \((i, b)\) through a public parameter \(P\) and a tweak.
       </p>
 
@@ -129,9 +129,9 @@
       <p class="scheme-intro">
         WOTS-TW signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
-        \(C = \sum_i (w - 1 - b_i)\). Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
-        \(w - 1\) times to reach \(pk_i\). The signature reveals the value at position \(b_i\) of each chain, and
-        the verifier completes the remaining \(w - 1 - b_i\) steps. Any other message has at least one digit lower
+        <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
+        \(w - 1\) times to reach \(pk_i\). The signature reveals the value at position <strong>\(\boldsymbol{b_i}\)</strong> of each chain, and
+        the verifier completes the remaining <strong>\(\boldsymbol{w - 1 - b_i}\)</strong> steps. Any other message has at least one digit lower
         than in the signed one, so a forgery needs a chain value earlier than the one revealed.
       </p>
 
@@ -200,8 +200,8 @@
       <h2 x-text="config.title"></h2>
       <p class="scheme-intro">
         WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
-        digest \(d = \mathrm{Th}(P, T^*, m \,\|\, \mathrm{count})\), written as \(\mathrm{len}_1\) base-\(w\)
-        digits \(a_i\), has its first \(l = \mathrm{len}_1 - z\) digits summing to \(S_{w,n}\) and its last
+        digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
+        digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
         \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
         values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
         value earlier than the one revealed.

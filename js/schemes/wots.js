@@ -77,15 +77,12 @@ export default {
     const verifySteps = (C) => C + len2 * (w - 1) - digits(C, w, len2).reduce((a, x) => a + x, 0);
 
     const maxS = (len1 - 1) * (w - 1) + 2 ** topBits - 1;
-    const dist = digitSumDistribution(w, len1, topBits);
-    let avgVerify = 0, worstVerify = 0, worstSign = 0;
+    let worstVerify = 0, worstSign = 0;
     for (let S = 0; S <= maxS; S++) {
       const v = verifySteps(len1 * (w - 1) - S);
-      avgVerify += dist[S] * v;
       worstVerify = Math.max(worstVerify, v);
       worstSign = Math.max(worstSign, chainSteps - v);
     }
-    const avgSign = chainSteps - avgVerify;
 
     const pBits = n;
     const skBits = n + pBits; // SK.seed and P
@@ -103,11 +100,9 @@ export default {
       skBits, pkBits, sigBits,
       pkCalls,
       keygenPrf: len, keygenSteps: chainSteps,
-      avgSign, worstSign, avgVerify, worstVerify,
+      worstSign, worstVerify,
       keygenCompressions: (len + chainSteps) * call + pkCall + 1,
-      avgSignCompressions: (len + avgSign) * call + 1,
       worstSignCompressions: (len + worstSign) * call + 1,
-      avgVerifyCompressions: avgVerify * call + pkCall + 1,
       worstVerifyCompressions: worstVerify * call + pkCall + 1,
       perBlock: Math.floor(4000000 / ((sigBits + pkBits) / 8)),
     };
@@ -118,9 +113,9 @@ export default {
       heading: 'Chains',
       tooltip: '\\(\\mathrm{len}_1 = \\lceil n / \\log_2 w \\rceil\\) chains sign the message and \\(\\mathrm{len}_2\\) chains sign the checksum, whose maximum is \\(\\mathrm{len}_1 (w-1)\\).',
       rows: [
-        { label: '\\(\\mathrm{len}_1\\)', value: (d) => num(d.len1) },
-        { label: '\\(\\mathrm{len}_2\\)', value: (d) => num(d.len2) },
-        { label: '\\(\\mathrm{len}\\)', value: (d) => num(d.len) },
+        { label: 'Message chains (\\(\\mathrm{len}_1\\))', value: (d) => num(d.len1) },
+        { label: 'Checksum chains (\\(\\mathrm{len}_2\\))', value: (d) => num(d.len2) },
+        { label: 'Total chains (\\(\\mathrm{len}\\))', value: (d) => num(d.len) },
       ],
     },
     {
@@ -138,9 +133,7 @@ export default {
           label: 'Key generation',
           value: (d) => `${num(d.keygenPrf)} \\(\\mathbf{PRF}\\) + ${num(d.keygenSteps + d.pkCalls)} \\(\\mathrm{Th}\\)`,
         },
-        { label: 'Signing (average)', value: (d) => `${num(d.len)} \\(\\mathbf{PRF}\\) + ${num(Math.round(d.avgSign))} \\(\\mathrm{Th}\\)` },
         { label: 'Signing (worst case)', value: (d) => `${num(d.len)} \\(\\mathbf{PRF}\\) + ${num(d.worstSign)} \\(\\mathrm{Th}\\)` },
-        { label: 'Verification (average)', value: (d) => `${num(Math.round(d.avgVerify + d.pkCalls))} \\(\\mathrm{Th}\\)` },
         { label: 'Verification (worst case)', value: (d) => `${num(d.worstVerify + d.pkCalls)} \\(\\mathrm{Th}\\)` },
       ],
     },
@@ -149,9 +142,7 @@ export default {
       tooltip: 'An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. Calls follow FIPS 205: a cached \\(\\mathrm{PK.seed}\\) block, then a 22-byte \\(\\mathrm{ADRS}^c\\) and the input. The cached block adds one compression per operation.',
       rows: [
         { label: 'Key generation', value: (d) => num(d.keygenCompressions) },
-        { label: 'Signing (average)', value: (d) => num(Math.round(d.avgSignCompressions)) },
         { label: 'Signing (worst case)', value: (d) => num(d.worstSignCompressions) },
-        { label: 'Verification (average)', value: (d) => num(Math.round(d.avgVerifyCompressions)) },
         { label: 'Verification (worst case)', value: (d) => num(d.worstVerifyCompressions) },
       ],
     },

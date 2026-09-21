@@ -334,3 +334,6 @@ button.wots-digit { cursor: pointer; }
 .chain-group .wots-index { width: 2.75rem; }
 .chain-group.omitted .wots-row-inner { opacity: 0.4; }
 .chain-group.omitted .chain-cell { background: transparent; border-style: dashed; }
+
+/* Emphasized math in scheme descriptions */
+.scheme-intro strong .katex { -webkit-text-stroke: 0.5px currentColor; }

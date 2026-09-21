@@ -57,7 +57,6 @@ export default {
     // p_nu = nu / w^len1: the l signed digits sum to S and the z zero digits are 0.
     const dist = digitSumDistribution(w, l, b);
     const p = (dist[S] ?? 0) * w ** -z;
-    const expectedSearch = 1 / p;
     // Trials that suffice except with probability 2^-30, as in the paper's tables.
     const wcSearch = Math.ceil((-30 * Math.LN2) / Math.log1p(-p));
     // log2 of the probability that all 2^r counter values fail.
@@ -78,12 +77,11 @@ export default {
 
     return {
       w, len1, l, p,
-      expectedSearch, wcSearch, exhaustLog2,
+      wcSearch, exhaustLog2,
       skBits, pkBits, sigBits,
       pkCalls, signSteps, verifySteps,
       keygenSteps: l * (w - 1),
       keygenCompressions: (l + l * (w - 1)) * call + pkCall + 1,
-      expSignCompressions: (l + signSteps) * call + expectedSearch * grindCall + 1,
       wcSignCompressions: (l + signSteps) * call + wcSearch * grindCall + 1,
       verifyCompressions: verifySteps * call + grindCall + pkCall + 1,
       perBlock: Math.floor(4000000 / ((sigBits + pkBits) / 8)),
@@ -95,8 +93,8 @@ export default {
       heading: 'Chains',
       tooltip: '\\(\\mathrm{len}_1 = \\lceil n / \\log_2 w \\rceil\\) digest digits, of which the last \\(z\\) are zero. Only \\(l = \\mathrm{len}_1 - z\\) chains are signed, and there are no checksum chains.',
       rows: [
-        { label: '\\(\\mathrm{len}_1\\)', value: (d) => num(d.len1) },
-        { label: '\\(l\\)', value: (d) => num(d.l) },
+        { label: 'Digest digits (\\(\\mathrm{len}_1\\))', value: (d) => num(d.len1) },
+        { label: 'Signed chains (\\(l\\))', value: (d) => num(d.l) },
       ],
     },
     {
@@ -110,8 +108,7 @@ export default {
       heading: 'Search',
       tooltip: 'Each trial hashes \\(m \\,\\|\\, \\mathrm{count}\\) once and succeeds with probability \\(p_\\nu = \\nu / w^{\\mathrm{len}_1}\\), where \\(\\nu\\) counts the digit tuples summing to \\(S_{w,n}\\). WC search is the number of trials that suffices except with probability \\(2^{-30}\\), as in the paper\'s tables.',
       rows: [
-        { label: '\\(p_\\nu\\)', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
-        { label: 'Expected search', value: (d) => approx(d.expectedSearch) },
+        { label: 'Success probability per trial (\\(p_\\nu\\))', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
         { label: 'WC search', value: (d) => approx(d.wcSearch) },
         {
           label: 'Counter exhaustion probability',
@@ -130,7 +127,6 @@ export default {
           label: 'Key generation',
           value: (d) => `${num(d.l)} \\(\\mathbf{PRF}\\) + ${num(d.keygenSteps + d.pkCalls)} \\(\\mathrm{Th}\\)`,
         },
-        { label: 'Signing (expected search)', value: (d) => `${num(d.l)} \\(\\mathbf{PRF}\\) + ${approx(d.signSteps + d.expectedSearch)} \\(\\mathrm{Th}\\)` },
         { label: 'Signing (WC search)', value: (d) => `${num(d.l)} \\(\\mathbf{PRF}\\) + ${approx(d.signSteps + d.wcSearch)} \\(\\mathrm{Th}\\)` },
         { label: 'Verification', value: (d) => `${num(d.verifySteps + 1 + d.pkCalls)} \\(\\mathrm{Th}\\)` },
       ],
@@ -140,7 +136,6 @@ export default {
       tooltip: 'An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. Calls follow FIPS 205: a cached \\(\\mathrm{PK.seed}\\) block, then a 22-byte \\(\\mathrm{ADRS}^c\\) and the input. The cached block adds one compression per operation.',
       rows: [
         { label: 'Key generation', value: (d) => num(d.keygenCompressions) },
-        { label: 'Signing (expected search)', value: (d) => approx(d.expSignCompressions) },
         { label: 'Signing (WC search)', value: (d) => approx(d.wcSignCompressions) },
         { label: 'Verification', value: (d) => num(d.verifyCompressions) },
       ],
