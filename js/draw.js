@@ -1,0 +1,119 @@
+// Drawing helpers shared by the visualizations.
+
+// Collects SVG elements as strings.
+export function svg() {
+  const parts = [];
+  return {
+    line(x1, y1, x2, y2, cls = 'edge') {
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls}"/>`);
+    },
+    text(x, y, s, anchor = 'middle', cls = 'label') {
+      parts.push(`<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${s}</text>`);
+    },
+    circle(x, y, r, cls) {
+      parts.push(`<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>`);
+    },
+    rect(x, y, width, height, cls) {
+      parts.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="2" class="${cls}"/>`);
+    },
+    toString() {
+      return parts.join('');
+    },
+  };
+}
+
+// Balanced tree of height h between x = left and x = right, root at y = top.
+// Draws the top three levels, elides the rest when h > 3, and draws up to
+// eight leaf slots as squares. Returns the leaf row position.
+export function drawTree(g, { h, left, right, top, level = 40, radius = 7, leafSize = 14 }) {
+  const leafCount = 2 ** h;
+  const inner = Math.min(h, 3);
+  const elided = h > 3;
+  const slots = leafCount <= 8 ? [...Array(leafCount).keys()] : [0, 1, 2, 3, null, leafCount - 2, leafCount - 1];
+  const slotX = (i) => left + ((i + 0.5) * (right - left)) / slots.length;
+  const levelX = (depth, k) => left + ((k + 0.5) * (right - left)) / 2 ** depth;
+  const Y = (row) => top + row * level;
+
+  for (let depth = 0; depth + 1 < inner; depth++) {
+    for (let k = 0; k < 2 ** depth; k++) {
+      g.line(levelX(depth, k), Y(depth), levelX(depth + 1, 2 * k), Y(depth + 1));
+      g.line(levelX(depth, k), Y(depth), levelX(depth + 1, 2 * k + 1), Y(depth + 1));
+    }
+  }
+  const leafRow = elided ? inner + 1 : inner;
+  if (!elided) {
+    for (let k = 0; k < 2 ** (inner - 1); k++) {
+      g.line(levelX(inner - 1, k), Y(inner - 1), slotX(2 * k), Y(leafRow));
+      g.line(levelX(inner - 1, k), Y(inner - 1), slotX(2 * k + 1), Y(leafRow));
+    }
+  } else {
+    g.text((left + right) / 2, Y(inner) + 4, `⋮  ${h - 3} more levels`);
+  }
+  for (let depth = 0; depth < inner; depth++) {
+    for (let k = 0; k < 2 ** depth; k++) g.circle(levelX(depth, k), Y(depth), radius, 'tree-node');
+  }
+
+  const leafY = Y(leafRow);
+  slots.forEach((k, i) => {
+    if (k === null) g.text(slotX(i), leafY + 4, '…');
+    else g.rect(slotX(i) - leafSize / 2, leafY - leafSize / 2, leafSize, leafSize, 'ots-node');
+  });
+
+  return { rootX: levelX(0, 0), rootY: Y(0), leafY, leafCount, slotX };
+}
+
+// l hash chains of w values each, as rows starting at (left, top). Rows are
+// elided when l > 5, and chains become a bar with the end cell when w > 16.
+// Labels sk_i, the value count, and pk_i under the first, middle, and last
+// positions. Returns the geometry for connecting lines.
+export function drawChains(g, { l, w, left, top, rowHeight = 16, cellWidth = 14, gap = 3 }) {
+  const rows = l <= 5 ? [...Array(l).keys()] : [0, 1, 2, null, l - 1];
+  const cells = Math.min(w, 16);
+  const right = left + cells * (cellWidth + gap) - gap;
+  const ends = [];
+
+  rows.forEach((c, r) => {
+    const y = top + r * (rowHeight + 4);
+    if (c === null) {
+      g.text((left + right) / 2, y + 12, '⋮');
+      return;
+    }
+    g.text(left - 8, y + 12, `chain ${c + 1}`, 'end');
+    if (w <= 16) {
+      for (let j = 0; j < cells; j++) {
+        g.rect(left + j * (cellWidth + gap), y, cellWidth, rowHeight, j === w - 1 ? 'chain-end' : 'chain-value');
+      }
+    } else {
+      g.rect(left, y, right - left - cellWidth - gap, rowHeight, 'chain-value');
+      g.rect(right - cellWidth, y, cellWidth, rowHeight, 'chain-end');
+    }
+    ends.push({ x: right + 2, y: y + rowHeight / 2 });
+  });
+
+  const bottom = top + rows.length * (rowHeight + 4);
+  g.text(left + cellWidth / 2, bottom + 14, 'skᵢ');
+  g.text((left + right) / 2, bottom + 14, `${w} values`);
+  g.text(right - cellWidth / 2, bottom + 14, 'pkᵢ');
+  return { right, bottom, ends };
+}
+
+// DOM for one chain with the value at position `digit` revealed. Positions
+// are cells when w <= 16 and a proportional bar otherwise.
+export function chainCells(w, digit) {
+  const el = (cls, style) => {
+    const d = document.createElement('div');
+    d.className = cls;
+    if (style) d.style.cssText = style;
+    return d;
+  };
+  if (w <= 16) {
+    return Array.from({ length: w }, (_, j) =>
+      el('chain-cell ' + (j < digit ? 'signer' : j === digit ? 'revealed' : 'verifier')));
+  }
+  const pct = (x) => (100 * x) / (w - 1);
+  return [
+    el('chain-bar signer', `width: ${pct(digit)}%`),
+    el('chain-bar-marker', `left: ${pct(digit)}%`),
+    el('chain-bar verifier', `left: ${pct(digit)}%; width: ${100 - pct(digit)}%`),
+  ];
+}

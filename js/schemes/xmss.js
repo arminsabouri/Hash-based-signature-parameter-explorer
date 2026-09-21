@@ -1,16 +1,12 @@
-import { compressions, tweakedCompressions } from '../sha256.js';
+import * as merkleTree from '../primitives/merkle-tree.js';
+import * as messageHash from '../primitives/message-hash.js';
+import * as wotsC from '../primitives/wots-c.js';
 import { approx, bytes, num } from '../scheme.js';
-import { wotsC, wotsCParameters } from './wots-c.js';
+import { blockSpace, signatureBudget, successProbability, wcSearch } from '../common-results.js';
+import { drawChains, drawTree, svg } from '../draw.js';
 
 // XMSS with WOTS+C leaves, Section 7 of Kudinov and Nick, "Hash-based Signature
 // Schemes for Bitcoin". Balanced tree of height h.
-
-// Message hashing as in FIPS 205 for a 32-byte message:
-// PRF_msg = HMAC-SHA-256(SK.prf, opt_rand || M) and
-// H_msg = MGF1-SHA-256(R || PK.seed || SHA-256(R || PK.seed || PK.root || M)).
-const MESSAGE_BYTES = 32;
-const prfMsgCompressions = (nb) => compressions(64 + nb + MESSAGE_BYTES) + compressions(64 + 32);
-const hMsgCompressions = (nb) => compressions(3 * nb + MESSAGE_BYTES) + compressions(2 * nb + 32 + 4);
 
 export default {
   id: 'xmss',
@@ -23,77 +19,55 @@ export default {
   },
 
   parameters: [
-    {
-      key: 'h', type: 'range', min: 1, max: 30, step: 1, default: 10, group: 'Tree',
-      ticks: [8, 16, 20],
-      label: '\\(h\\) (tree height)',
+    ...merkleTree.parameters('Tree').map((p) => ({
+      ...p,
       tooltip: 'The tree has \\(2^h\\) WOTS+C leaves, one per signature. Each extra level doubles the signature budget and the key generation work, and adds one \\(n\\)-bit node to the authentication path.',
-    },
-    ...wotsCParameters.map((p) => ({ ...p, group: 'OTS (WOTS+C)' })),
+    })),
+    ...wotsC.parameters('OTS (WOTS+C)'),
   ],
 
   derive(state) {
-    const { h, n } = state;
-    const nb = n / 8;
-    const ots = wotsC(state);
-    const { l, w, call } = ots;
-
-    const leaves = 2 ** h;
+    const ots = wotsC.model({ ...state, compressed: true });
+    const tree = merkleTree.model(state, ots);
+    const msg = messageHash.model(state);
 
     // Signature (i, R, sigma_OTS, AuthPath_i).
-    const indexBits = 8 * Math.ceil(h / 8);
-    const rBits = n;
-    const otsBits = l * n + ots.r;
-    const authBits = h * n;
-    const sigBits = indexBits + rBits + otsBits + authBits;
+    const sizes = {
+      sk: 4 * state.n, // SK.seed, SK.prf, PK.seed, and root
+      pk: 2 * state.n, // PK.seed and root
+      cache: tree.sizes.cache,
+      index: 8 * Math.ceil(state.h / 8),
+      R: msg.sizes.R,
+      ots: ots.sizes.sig,
+      authPath: tree.sizes.authPath,
+    };
+    sizes.sig = sizes.index + sizes.R + sizes.ots + sizes.authPath;
 
-    const pkBits = 2 * n; // PK.seed and root
-    const skBits = 4 * n; // SK.seed, SK.prf, PK.seed, and root
-    const cacheBits = (2 * leaves - 1) * n;
-
-    // Hash calls. A leaf is a WOTS+C key: l PRF, l(w-1) chain steps, and one
-    // Th to compress the chain ends. Inner nodes take one Th each.
-    const leafPrf = l;
-    const leafTh = l * (w - 1) + 1;
-    const nodes = leaves - 1;
-    const treePrf = leaves * leafPrf;
-    const treeTh = leaves * leafTh + nodes;
-
-    const signPrf = l;
-    const signTh = ots.signSteps + ots.wcSearch;
-    const verifyTh = 1 + ots.verifySteps + 1 + h; // search trial, chains, leaf, path
-
-    // SHA-256 compressions.
-    const pkCall = tweakedCompressions(l * nb);
-    const nodeCall = tweakedCompressions(2 * nb);
-    const leafCompressions = (leafPrf + l * (w - 1)) * call + pkCall;
-    const treeCompressions = leaves * leafCompressions + nodes * nodeCall;
-    const msgSign = prfMsgCompressions(nb) + hMsgCompressions(nb);
-    const otsSign = (signPrf + ots.signSteps) * call + ots.wcSearch * ots.grindCall;
-
+    // Each operation also computes the cached PK.seed midstate once.
+    const otsSign = msg.sign.compressions + ots.sign.compressions;
     return {
-      ...ots, leaves,
-      indexBits, rBits, otsBits, authBits, sigBits, pkBits, skBits, cacheBits,
-      treePrf, treeTh, signPrf, signTh, verifyTh,
-      keygenCompressions: treeCompressions + 1,
-      signCompressions: treeCompressions + msgSign + otsSign + 1,
-      signCachedCompressions: msgSign + otsSign + 1,
-      verifyCompressions: hMsgCompressions(nb) + ots.grindCall + ots.verifySteps * call
-        + pkCall + h * nodeCall + 1,
-      perBlock: Math.floor(4000000 / ((sigBits + pkBits) / 8)),
+      p: ots.p, wcSearch: ots.wcSearch, leaves: tree.leaves,
+      sizes,
+      treePrf: tree.keygen.prf, treeTh: tree.keygen.th,
+      signPrf: ots.sign.prf, signTh: ots.sign.th,
+      verifyTh: ots.verify.th + tree.verify.th,
+      keygenCompressions: tree.keygen.compressions + 1,
+      signCompressions: tree.keygen.compressions + otsSign + 1,
+      signCachedCompressions: otsSign + 1,
+      verifyCompressions: msg.verify.compressions + ots.verify.compressions + tree.verify.compressions + 1,
     };
   },
 
   results: [
     {
       rows: [
-        { label: 'Secret key', value: (d) => bytes(d.skBits) },
-        { label: 'Public key', group: 'Tree', value: (d) => bytes(d.pkBits) },
+        { label: 'Secret key', value: (d) => bytes(d.sizes.sk) },
+        { label: 'Public key', group: 'Tree', value: (d) => bytes(d.sizes.pk) },
         {
           label: 'Tree cache',
           group: 'Tree',
           tooltip: 'All \\(2^{h+1} - 1\\) tree nodes, kept by a signer that avoids rebuilding the tree on each signature.',
-          value: (d) => bytes(d.cacheBits),
+          value: (d) => bytes(d.sizes.cache),
         },
       ],
     },
@@ -101,11 +75,11 @@ export default {
       heading: 'Signature',
       tooltip: 'The tuple \\((i, R, \\sigma_{\\mathrm{OTS}}, \\mathrm{AuthPath}_i)\\): the leaf index, the message randomness, the WOTS+C signature with its counter, and the \\(h\\) sibling nodes from leaf to root.',
       rows: [
-        { label: 'Leaf index \\(i\\)', group: 'Tree', value: (d) => bytes(d.indexBits) },
-        { label: 'Randomness \\(R\\)', value: (d) => bytes(d.rBits) },
-        { label: 'WOTS+C signature (\\(\\sigma_{\\mathrm{OTS}}\\))', group: 'OTS (WOTS+C)', value: (d) => bytes(d.otsBits) },
-        { label: '\\(\\mathrm{AuthPath}_i\\)', group: 'Tree', value: (d) => bytes(d.authBits) },
-        { label: 'Total', value: (d) => bytes(d.sigBits) },
+        { label: 'Leaf index \\(i\\)', group: 'Tree', value: (d) => bytes(d.sizes.index) },
+        { label: 'Randomness \\(R\\)', value: (d) => bytes(d.sizes.R) },
+        { label: 'WOTS+C signature (\\(\\sigma_{\\mathrm{OTS}}\\))', group: 'OTS (WOTS+C)', value: (d) => bytes(d.sizes.ots) },
+        { label: '\\(\\mathrm{AuthPath}_i\\)', group: 'Tree', value: (d) => bytes(d.sizes.authPath) },
+        { label: 'Total', value: (d) => bytes(d.sizes.sig) },
       ],
     },
     {
@@ -113,8 +87,8 @@ export default {
       group: 'OTS (WOTS+C)',
       tooltip: 'The WOTS+C counter search on the message digest. WC search is the number of trials that suffices except with probability \\(2^{-30}\\).',
       rows: [
-        { label: 'Success probability per trial (\\(p_\\nu\\))', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
-        { label: 'WC search', value: (d) => approx(d.wcSearch) },
+        successProbability,
+        wcSearch,
       ],
     },
     {
@@ -138,9 +112,7 @@ export default {
       ],
     },
     {
-      heading: 'Signature budget',
-      group: 'Tree',
-      rows: [
+      ...signatureBudget(
         {
           label: 'Signatures per key pair',
           tooltip: 'One per leaf, \\(2^h\\). Reusing a leaf for a second message breaks the security of its WOTS+C key.',
@@ -151,18 +123,10 @@ export default {
           tooltip: 'The signer stores the index of the next unused leaf and increments it before releasing each signature. SHRINCS requires that it never decrements and is never restored from a backup.',
           value: (d) => `${num(Math.ceil(Math.log2(d.leaves)) || 1)} bits`,
         },
-      ],
+      ),
+      group: 'Tree',
     },
-    {
-      heading: 'Block space',
-      rows: [
-        {
-          label: 'Signature + public key per 4,000,000 WU block',
-          tooltip: 'The BIP 141 block weight limit divided by signature plus public key bytes, counted as witness data at 1 WU per byte. Transaction overhead is not included.',
-          value: (d) => num(d.perBlock),
-        },
-      ],
-    },
+    blockSpace,
   ],
 };
 
@@ -170,106 +134,40 @@ export default {
 // children) with WOTS+C public keys as leaves, and one leaf opened up to show
 // its l chains of w values compressed into the leaf.
 function treeSvg(h, l, w) {
-  const W = 560, R = 7, LEVEL = 40, TOP = 30;
-  const parts = [];
-  const add = (s) => parts.push(s);
-  const line = (x1, y1, x2, y2, cls = 'edge') =>
-    add(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls}"/>`);
-  const text = (x, y, s, anchor = 'middle', cls = 'label') =>
-    add(`<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${s}</text>`);
-  const circle = (x, y) => add(`<circle cx="${x}" cy="${y}" r="${R}" class="tree-node"/>`);
-  const square = (x, y, s = 14) => add(`<rect x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" rx="2" class="ots-node"/>`);
-
-  const leafCount = 2 ** h;
-  const inner = Math.min(h, 3);            // inner levels drawn from the root down
-  const elided = h > 3;
-  const slots = leafCount <= 8 ? [...Array(leafCount).keys()] : [0, 1, 2, 3, null, leafCount - 2, leafCount - 1];
-  const treeLeft = 40, treeRight = W - 110;
-  const slotX = (k) => treeLeft + ((k + 0.5) * (treeRight - treeLeft)) / slots.length;
-  const levelX = (depth, k) => treeLeft + ((k + 0.5) * (treeRight - treeLeft)) / 2 ** depth;
-  const Y = (row) => TOP + row * LEVEL;
-
-  // Inner nodes, depth 0 = root.
-  for (let depth = 0; depth < inner; depth++) {
-    for (let k = 0; k < 2 ** depth; k++) {
-      if (depth + 1 < inner) {
-        line(levelX(depth, k), Y(depth), levelX(depth + 1, 2 * k), Y(depth + 1));
-        line(levelX(depth, k), Y(depth), levelX(depth + 1, 2 * k + 1), Y(depth + 1));
-      }
-    }
-  }
-  const leafRow = elided ? inner + 1 : inner;
-  if (!elided) {
-    for (let k = 0; k < 2 ** (inner - 1); k++) {
-      line(levelX(inner - 1, k), Y(inner - 1), slotX(2 * k), Y(leafRow));
-      line(levelX(inner - 1, k), Y(inner - 1), slotX(2 * k + 1), Y(leafRow));
-    }
-  } else {
-    text((treeLeft + treeRight) / 2, Y(inner) + 4, `\u22EE  ${h - 3} more levels`);
-  }
-  for (let depth = 0; depth < inner; depth++) {
-    for (let k = 0; k < 2 ** depth; k++) circle(levelX(depth, k), Y(depth));
-  }
-  text(levelX(0, 0), Y(0) - 14, 'Public key (root)');
-
-  // Leaves.
-  const leafY = Y(leafRow);
-  slots.forEach((k, i) => {
-    if (k === null) text(slotX(i), leafY + 4, '\u2026');
-    else square(slotX(i), leafY);
-  });
+  const W = 560;
+  const g = svg();
+  const tree = drawTree(g, { h, left: 40, right: W - 110, top: 30 });
+  g.text(tree.rootX, tree.rootY - 14, 'Public key (root)');
 
   // Height and leaf count annotations.
-  const bx = treeRight + 18;
-  line(bx, Y(0), bx, leafY, 'bracket');
-  line(bx - 4, Y(0), bx, Y(0), 'bracket');
-  line(bx - 4, leafY, bx, leafY, 'bracket');
-  text(bx + 8, (Y(0) + leafY) / 2 - 4, `h = ${h}`, 'start');
-  text(bx + 8, (Y(0) + leafY) / 2 + 12, 'levels', 'start');
-  text(bx + 8, leafY + 4, `${leafCount.toLocaleString()} leaves`, 'start', 'label ots-label');
+  const bx = W - 92;
+  g.line(bx, tree.rootY, bx, tree.leafY, 'bracket');
+  g.line(bx - 4, tree.rootY, bx, tree.rootY, 'bracket');
+  g.line(bx - 4, tree.leafY, bx, tree.leafY, 'bracket');
+  g.text(bx + 8, (tree.rootY + tree.leafY) / 2 - 4, `h = ${h}`, 'start');
+  g.text(bx + 8, (tree.rootY + tree.leafY) / 2 + 12, 'levels', 'start');
+  g.text(bx + 8, tree.leafY + 4, `${tree.leafCount.toLocaleString()} leaves`, 'start', 'label ots-label');
 
-  // One leaf opened up: l chains of w values, chain ends compressed by Th.
-  const rows = l <= 5 ? [...Array(l).keys()] : [0, 1, 2, null, l - 1];
-  const boxTop = leafY + 46, rowH = 16;
-  const cells = Math.min(w, 16);
-  const cellW = 14, gap = 3;
-  const chainLeft = 120, chainRight = chainLeft + cells * (cellW + gap) - gap;
-  const leafX = slotX(0);
-  const endsX = chainRight + 26;
+  // The first leaf opened up into its chains.
+  const leafX = tree.slotX(0);
+  const top = tree.leafY + 46;
+  const busY = top - 16;
+  g.line(leafX, tree.leafY + 7, leafX, busY, 'ots-edge');
+  g.text(leafX + 8, tree.leafY + 26, 'WOTS+C public key = Th(pk\u2081, \u2026, pk\u2097)', 'start', 'label ots-label');
+  const chains = drawChains(g, { l, w, left: 120, top });
+  const endsX = chains.right + 24;
+  for (const end of chains.ends) g.line(end.x, end.y, endsX, busY, 'ots-edge faint');
+  g.line(endsX, busY, leafX, busY, 'ots-edge');
+  g.text(chains.right, chains.bottom + 30, `l = ${l} chains`, 'end', 'label ots-label');
 
-  line(leafX, leafY + 7, leafX, boxTop - 16, 'ots-edge');
-  text(leafX + 8, leafY + 26, 'WOTS+C public key = Th(pk\u2081, \u2026, pk\u2097)', 'start', 'label ots-label');
-
-  rows.forEach((c, r) => {
-    const y = boxTop + r * (rowH + 4);
-    if (c === null) { text(chainLeft + (chainRight - chainLeft) / 2, y + 12, '\u22EE'); return; }
-    text(chainLeft - 8, y + 12, `chain ${c + 1}`, 'end');
-    if (w <= 16) {
-      for (let j = 0; j < cells; j++) {
-        add(`<rect x="${chainLeft + j * (cellW + gap)}" y="${y}" width="${cellW}" height="${rowH}" rx="2" class="${j === w - 1 ? 'chain-end' : 'chain-value'}"/>`);
-      }
-    } else {
-      add(`<rect x="${chainLeft}" y="${y}" width="${chainRight - chainLeft - cellW - gap}" height="${rowH}" rx="2" class="chain-value"/>`);
-      add(`<rect x="${chainRight - cellW}" y="${y}" width="${cellW}" height="${rowH}" rx="2" class="chain-end"/>`);
-    }
-    line(chainRight + 2, y + rowH / 2, endsX, boxTop - 16 + 0, 'ots-edge faint');
-  });
-  line(endsX, boxTop - 16, leafX, boxTop - 16, 'ots-edge');
-
-  const boxBottom = boxTop + rows.length * (rowH + 4);
-  text(chainLeft + cellW / 2, boxBottom + 14, 'sk\u1D62');
-  text((chainLeft + chainRight) / 2, boxBottom + 14, `${w} values`);
-  text(chainRight - cellW / 2, boxBottom + 14, 'pk\u1D62');
-  text(chainRight, boxBottom + 30, `l = ${l} chains`, 'end', 'label ots-label');
-
-  return { svg: parts.join(''), width: W, height: boxBottom + 44 };
+  return { svg: g.toString(), width: W, height: chains.bottom + 44 };
 }
 
 // Visualization state, nested inside the scheme component.
 export function xmssTree() {
   return {
     get drawing() {
-      const { l, w } = wotsC(this.state);
+      const { l, w } = wotsC.model({ ...this.state, compressed: true });
       return treeSvg(this.state.h, l, w);
     },
   };

@@ -1,66 +1,15 @@
-import { compressions, tweakedCompressions } from '../sha256.js';
+import * as wotsTw from '../primitives/wots-tw.js';
+import { digits, lengths } from '../primitives/wots-tw.js';
 import { bytes, num } from '../scheme.js';
-
-// WOTS-TW, Section 4 of Kudinov and Nick, "Hash-based Signature Schemes for Bitcoin".
-// The message length m equals n, as in SPHINCS+.
-
-const bitLength = (x) => (x === 0 ? 0 : Math.floor(Math.log2(x)) + 1);
-
-// len1, len2, and the width in bits of the most significant message digit.
-export function lengths(n, b) {
-  const w = 2 ** b;
-  const len1 = Math.ceil(n / b);
-  // As in SHRINCS: ceildiv(bit_length(len1 * (w - 1)), log2 w).
-  const len2 = Math.ceil(bitLength(len1 * (w - 1)) / b);
-  const topBits = n - (len1 - 1) * b;
-  return { w, len1, len2, len: len1 + len2, topBits };
-}
-
-// Base-w digits of x, most significant first.
-export function digits(x, w, count) {
-  const out = new Array(count);
-  for (let j = count - 1; j >= 0; j--) {
-    out[j] = x % w;
-    x = Math.floor(x / w);
-  }
-  return out;
-}
-
-// Distribution of the message digit sum S for a uniformly random n-bit message.
-export function digitSumDistribution(w, len1, topBits) {
-  let dist = [1];
-  const ranges = [2 ** topBits, ...new Array(len1 - 1).fill(w)];
-  for (const r of ranges) {
-    const next = new Array(dist.length + r - 1).fill(0);
-    // Sliding window sum of the previous distribution over r values.
-    let window = 0;
-    for (let s = 0; s < next.length; s++) {
-      if (s < dist.length) window += dist[s];
-      if (s - r >= 0) window -= dist[s - r];
-      next[s] = window / r;
-    }
-    dist = next;
-  }
-  return dist;
-}
+import { blockSpace, compressionsTooltip, oneTime, signatureBudget } from '../common-results.js';
+import { chainCells } from '../draw.js';
 
 export default {
   id: 'wots',
   title: 'WOTS-TW',
 
   parameters: [
-    {
-      key: 'n', type: 'range', min: 8, max: 256, step: 8, default: 128,
-      ticks: [32, 64, 128, 256],
-      label: '\\(n\\) (hash output bits)',
-      tooltip: 'Hash output length in bits, which is also the length of the signed message. Every chain value is \\(n\\) bits.',
-    },
-    {
-      key: 'b', type: 'range', min: 1, max: 8, step: 1, default: 4,
-      display: (b) => 2 ** b,
-      label: '\\(w\\) (Winternitz parameter)',
-      tooltip: 'Each chain has \\(w\\) values and encodes \\(\\log_2 w\\) message bits. A larger \\(w\\) gives fewer, longer chains.',
-    },
+    ...wotsTw.parameters(),
     {
       key: 'compressed', type: 'checkbox', default: true,
       label: 'Public key compression',
@@ -68,43 +17,14 @@ export default {
     },
   ],
 
-  derive({ n, b, compressed }) {
-    const { w, len1, len2, len, topBits } = lengths(n, b);
-    const chainSteps = len * (w - 1);
-
-    // Verification steps for checksum value C: the message chains need
-    // sum(w - 1 - a_i) = C steps, the checksum chains need sum(w - 1 - c_j).
-    const verifySteps = (C) => C + len2 * (w - 1) - digits(C, w, len2).reduce((a, x) => a + x, 0);
-
-    const maxS = (len1 - 1) * (w - 1) + 2 ** topBits - 1;
-    let worstVerify = 0, worstSign = 0;
-    for (let S = 0; S <= maxS; S++) {
-      const v = verifySteps(len1 * (w - 1) - S);
-      worstVerify = Math.max(worstVerify, v);
-      worstSign = Math.max(worstSign, chainSteps - v);
-    }
-
-    const pBits = n;
-    const skBits = n + pBits; // SK.seed and P
-    const pkBits = (compressed ? n : len * n) + pBits;
-    const sigBits = len * n;
-
-    // SHA-256 compressions: chain steps and PRF calls take an n-bit input;
-    // the public key compression call takes all len chain ends.
-    const call = tweakedCompressions(n / 8);
-    const pkCall = compressed ? tweakedCompressions(len * n / 8) : 0;
-    const pkCalls = compressed ? 1 : 0;
-
+  derive(state) {
+    const m = wotsTw.model(state);
+    // Each operation also computes the cached PK.seed midstate once.
     return {
-      w, len1, len2, len,
-      skBits, pkBits, sigBits,
-      pkCalls,
-      keygenPrf: len, keygenSteps: chainSteps,
-      worstSign, worstVerify,
-      keygenCompressions: (len + chainSteps) * call + pkCall + 1,
-      worstSignCompressions: (len + worstSign) * call + 1,
-      worstVerifyCompressions: worstVerify * call + pkCall + 1,
-      perBlock: Math.floor(4000000 / ((sigBits + pkBits) / 8)),
+      ...m,
+      keygenCompressions: m.keygen.compressions + 1,
+      signCompressions: m.sign.compressions + 1,
+      verifyCompressions: m.verify.compressions + 1,
     };
   },
 
@@ -120,52 +40,31 @@ export default {
     },
     {
       rows: [
-        { label: 'Secret key', value: (d) => bytes(d.skBits) },
-        { label: 'Public key', value: (d) => bytes(d.pkBits) },
-        { label: 'Signature', value: (d) => bytes(d.sigBits) },
+        { label: 'Secret key', value: (d) => bytes(d.sizes.sk) },
+        { label: 'Public key', value: (d) => bytes(d.sizes.pk) },
+        { label: 'Signature', value: (d) => bytes(d.sizes.sig) },
       ],
     },
     {
       heading: 'Hash calls',
       tooltip: 'Key generation computes every chain to its end. Signing computes chain \\(i\\) up to position \\(b_i\\) and verification finishes it, so together they take \\(\\mathrm{len}(w-1)\\) steps. Worst case is the maximum over all messages.',
       rows: [
-        {
-          label: 'Key generation',
-          value: (d) => `${num(d.keygenPrf)} \\(\\mathbf{PRF}\\) + ${num(d.keygenSteps + d.pkCalls)} \\(\\mathrm{Th}\\)`,
-        },
-        { label: 'Signing (worst case)', value: (d) => `${num(d.len)} \\(\\mathbf{PRF}\\) + ${num(d.worstSign)} \\(\\mathrm{Th}\\)` },
-        { label: 'Verification (worst case)', value: (d) => `${num(d.worstVerify + d.pkCalls)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => `${num(d.keygen.prf)} \\(\\mathbf{PRF}\\) + ${num(d.keygen.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Signing (worst case)', value: (d) => `${num(d.sign.prf)} \\(\\mathbf{PRF}\\) + ${num(d.sign.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Verification (worst case)', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
       ],
     },
     {
       heading: 'SHA-256 compressions',
-      tooltip: 'An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. Calls follow FIPS 205: a cached \\(\\mathrm{PK.seed}\\) block, then a 22-byte \\(\\mathrm{ADRS}^c\\) and the input. The cached block adds one compression per operation.',
+      tooltip: compressionsTooltip,
       rows: [
         { label: 'Key generation', value: (d) => num(d.keygenCompressions) },
-        { label: 'Signing (worst case)', value: (d) => num(d.worstSignCompressions) },
-        { label: 'Verification (worst case)', value: (d) => num(d.worstVerifyCompressions) },
+        { label: 'Signing (worst case)', value: (d) => num(d.signCompressions) },
+        { label: 'Verification (worst case)', value: (d) => num(d.verifyCompressions) },
       ],
     },
-    {
-      heading: 'Signature budget',
-      rows: [
-        {
-          label: 'Signatures per key pair',
-          tooltip: 'Two signatures on different messages reveal, in each chain, the lower of the two positions. Any message whose digits are all at or above those positions can then be signed.',
-          value: () => '1',
-        },
-      ],
-    },
-    {
-      heading: 'Block space',
-      rows: [
-        {
-          label: 'Signature + public key per 4,000,000 WU block',
-          tooltip: 'The BIP 141 block weight limit divided by signature plus public key bytes, counted as witness data at 1 WU per byte. Transaction overhead is not included.',
-          value: (d) => num(d.perBlock),
-        },
-      ],
-    },
+    signatureBudget(oneTime('Two signatures on different messages reveal, in each chain, the lower of the two positions. Any message whose digits are all at or above those positions can then be signed.')),
+    blockSpace,
   ],
 };
 
@@ -229,25 +128,4 @@ export function wotsChains() {
       return chainCells(this.lengths.w, digit);
     },
   };
-}
-
-// DOM for one chain with the value at position `digit` revealed. Positions
-// are cells when w <= 16 and a proportional bar otherwise.
-export function chainCells(w, digit) {
-  const el = (cls, style) => {
-    const d = document.createElement('div');
-    d.className = cls;
-    if (style) d.style.cssText = style;
-    return d;
-  };
-  if (w <= 16) {
-    return Array.from({ length: w }, (_, j) =>
-      el('chain-cell ' + (j < digit ? 'signer' : j === digit ? 'revealed' : 'verifier')));
-  }
-  const pct = (x) => (100 * x) / (w - 1);
-  return [
-    el('chain-bar signer', `width: ${pct(digit)}%`),
-    el('chain-bar-marker', `left: ${pct(digit)}%`),
-    el('chain-bar verifier', `left: ${pct(digit)}%; width: ${100 - pct(digit)}%`),
-  ];
 }
