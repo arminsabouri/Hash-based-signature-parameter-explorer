@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'wots-c'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -62,6 +62,8 @@
               @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW</button>
       <button type="button" role="tab" :aria-selected="selected === 'wots-c'"
               @click="selected = 'wots-c'; history.replaceState(null, '', '#wots-c')">WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'xmss'"
+              @click="selected = 'xmss'; history.replaceState(null, '', '#xmss')">XMSS + WOTS+C</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -267,13 +269,46 @@
         <aside class="results" data-template="results-panel"></aside>
       </div>
     </section>
+
+    <section class="scheme" x-data="scheme('xmss')" x-show="selected === 'xmss'">
+      <h2 x-text="config.title"></h2>
+      <p class="scheme-intro">
+        XMSS authenticates <strong>\(\boldsymbol{2^h}\)</strong> WOTS+C public keys as the leaves of a Merkle
+        tree of height \(h\), and the root is the public key. To sign, the signer takes the next unused leaf
+        \(i\), signs the randomized message digest with that leaf's WOTS+C key, and attaches the authentication
+        path: the <strong>\(\boldsymbol{h}\)</strong> sibling nodes from the leaf to the root. The signature is
+        <strong>\(\boldsymbol{(i, R, \sigma_{\mathbf{OTS}}, \mathbf{AuthPath}_i)}\)</strong>. The verifier
+        recomputes the leaf from \(\sigma_{\mathrm{OTS}}\), hashes up the path, and compares the result with the
+        root. Each leaf signs once, so the signer keeps state: the index of the next unused leaf.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="xmssTree">
+          <h3>Visualization</h3>
+
+          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
+               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+
+          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
+            Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
   </main>
 
   <!-- Panels shared by every scheme section, rendered from its config. -->
   <template id="parameters-panel">
     <h3>Parameters</h3>
-    <template x-for="p in config.parameters" :key="p.key">
-      <div>
+    <template x-for="(p, i) in config.parameters" :key="p.key">
+      <div :class="p.group && { grouped: true, 'group-start': p.group !== config.parameters[i - 1]?.group }"
+           :style="p.group && `--group-color: ${config.groups[p.group]}`">
+        <template x-if="p.group && p.group !== config.parameters[i - 1]?.group">
+          <h4 class="parameter-group" x-text="p.group"></h4>
+        </template>
         <template x-if="p.type === 'range'">
           <label>
             <span><span x-katex="p.label"></span>: <output x-text="p.display ? p.display(state[p.key]) : state[p.key]"></output>
@@ -302,6 +337,13 @@
 
   <template id="results-panel">
     <h3>Results</h3>
+    <template x-if="config.groups">
+      <ul class="group-legend">
+        <template x-for="(color, name) in config.groups" :key="name">
+          <li :style="`--group-color: ${color}`" x-text="name"></li>
+        </template>
+      </ul>
+    </template>
     <template x-for="(group, g) in config.results" :key="g">
       <div>
         <template x-if="group.heading">
@@ -316,7 +358,8 @@
         </template>
         <dl>
           <template x-for="(row, r) in group.rows" :key="r">
-            <div class="result-row">
+            <div class="result-row" :class="(row.group ?? group.group) && 'grouped'"
+                 :style="(row.group ?? group.group) && `--group-color: ${config.groups[row.group ?? group.group]}`">
               <dt><span x-katex="row.label"></span>
                 <template x-if="row.tooltip">
                   <span>

@@ -8,11 +8,8 @@ const len1Of = ({ n, b }) => Math.ceil(n / b);
 const chainsOf = (state) => len1Of(state) - state.z;
 const centerSum = (state) => Math.ceil((chainsOf(state) * (2 ** state.b - 1)) / 2);
 
-export default {
-  id: 'wots-c',
-  title: 'WOTS+C',
-
-  parameters: [
+// n, w, z, S_{w,n}, and r, shared with schemes that use WOTS+C.
+export const wotsCParameters = [
     {
       key: 'n', type: 'range', min: 8, max: 256, step: 8, default: 128,
       ticks: [32, 64, 128, 256],
@@ -39,8 +36,41 @@ export default {
     {
       key: 'r', type: 'range', min: 8, max: 64, step: 8, default: 32,
       label: '\\(r\\) (counter bits)',
-      tooltip: 'Size of the counter carried in the signature. The paper counts 4 bytes and SHRINCS uses 2.',
+      tooltip: 'Size of the counter carried in the signature. SHRINCS uses 16 bits.',
     },
+];
+
+// Values shared with schemes that use WOTS+C.
+export function wotsC(state) {
+  const { n, b, z, S, r } = state;
+  const w = 2 ** b;
+  const len1 = len1Of(state);
+  const l = len1 - z;
+
+  // p_nu = nu / w^len1: the l signed digits sum to S and the z zero digits are 0.
+  const dist = digitSumDistribution(w, l, b);
+  const p = (dist[S] ?? 0) * w ** -z;
+  // Trials that suffice except with probability 2^-30, as in the paper's tables.
+  const wcSearch = Math.ceil((-30 * Math.LN2) / Math.log1p(-p));
+  // log2 of the probability that all 2^r counter values fail.
+  const exhaustLog2 = (2 ** r * Math.log1p(-p)) / Math.LN2;
+
+  return {
+    w, len1, l, p, r, wcSearch, exhaustLog2,
+    signSteps: S,
+    verifySteps: l * (w - 1) - S,
+    // SHA-256 compressions per chain step or PRF call, and per search trial.
+    call: tweakedCompressions(n / 8),
+    grindCall: tweakedCompressions((n + r) / 8),
+  };
+}
+
+export default {
+  id: 'wots-c',
+  title: 'WOTS+C',
+
+  parameters: [
+    ...wotsCParameters,
     {
       key: 'compressed', type: 'checkbox', default: true,
       label: 'Public key compression',
@@ -49,30 +79,15 @@ export default {
   ],
 
   derive(state) {
-    const { n, b, z, S, r, compressed } = state;
-    const w = 2 ** b;
-    const len1 = len1Of(state);
-    const l = len1 - z;
-
-    // p_nu = nu / w^len1: the l signed digits sum to S and the z zero digits are 0.
-    const dist = digitSumDistribution(w, l, b);
-    const p = (dist[S] ?? 0) * w ** -z;
-    // Trials that suffice except with probability 2^-30, as in the paper's tables.
-    const wcSearch = Math.ceil((-30 * Math.LN2) / Math.log1p(-p));
-    // log2 of the probability that all 2^r counter values fail.
-    const exhaustLog2 = (2 ** r * Math.log1p(-p)) / Math.LN2;
+    const { n, compressed } = state;
+    const { w, len1, l, p, wcSearch, exhaustLog2, signSteps, verifySteps, call, grindCall, r } = wotsC(state);
 
     const pBits = n;
     const skBits = n + pBits; // SK.seed and P
     const pkBits = (compressed ? n : l * n) + pBits;
     const sigBits = l * n + r;
 
-    const signSteps = S;
-    const verifySteps = l * (w - 1) - S;
     const pkCalls = compressed ? 1 : 0;
-
-    const call = tweakedCompressions(n / 8);
-    const grindCall = tweakedCompressions((n + r) / 8);
     const pkCall = compressed ? tweakedCompressions(l * n / 8) : 0;
 
     return {
@@ -106,7 +121,7 @@ export default {
     },
     {
       heading: 'Search',
-      tooltip: 'Each trial hashes \\(m \\,\\|\\, \\mathrm{count}\\) once and succeeds with probability \\(p_\\nu = \\nu / w^{\\mathrm{len}_1}\\), where \\(\\nu\\) counts the digit tuples summing to \\(S_{w,n}\\). WC search is the number of trials that suffices except with probability \\(2^{-30}\\), as in the paper\'s tables.',
+      tooltip: 'Each trial hashes \\(m \\,\\|\\, \\mathrm{count}\\) once and succeeds with probability \\(p_\\nu = \\nu / w^{\\mathrm{len}_1}\\), where \\(\\nu\\) counts the digit tuples summing to \\(S_{w,n}\\). WC search is the number of trials that suffices except with probability \\(2^{-30}\\).',
       rows: [
         { label: 'Success probability per trial (\\(p_\\nu\\))', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
         { label: 'WC search', value: (d) => approx(d.wcSearch) },

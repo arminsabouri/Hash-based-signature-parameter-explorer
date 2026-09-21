@@ -2,8 +2,9 @@ import { scheme } from './scheme.js';
 import lamport, { lamportGrid } from './schemes/lamport.js';
 import wots, { wotsChains } from './schemes/wots.js';
 import wotsC, { wotsCChains } from './schemes/wots-c.js';
+import xmss, { xmssTree } from './schemes/xmss.js';
 
-const schemes = { lamport, wots, 'wots-c': wotsC };
+const schemes = { lamport, wots, 'wots-c': wotsC, xmss };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.
@@ -25,4 +26,5 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('lamportGrid', lamportGrid);
   Alpine.data('wotsChains', wotsChains);
   Alpine.data('wotsCChains', wotsCChains);
+  Alpine.data('xmssTree', xmssTree);
 });

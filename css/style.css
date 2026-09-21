@@ -228,7 +228,16 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
   border-radius: 3px 0 0 3px;
 }
 
-.result-row { display: contents; }
+.results dl { display: block; }
+.result-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: 0.75rem;
+  padding: 0.1rem 0;
+}
+.result-row dt { flex: 1 1 8rem; }
+.result-row dd { margin-left: auto; white-space: nowrap; }
 .explorer .tooltip-icon + .tooltip, .explorer span > .tooltip { font-weight: normal; }
 
 /* Scheme tabs */
@@ -337,3 +346,50 @@ button.wots-digit { cursor: pointer; }
 
 /* Emphasized math in scheme descriptions */
 .scheme-intro strong .katex { -webkit-text-stroke: 0.5px currentColor; }
+
+/* XMSS tree */
+.xmss-tree { display: block; width: 100%; height: auto; margin: 0 auto; }
+.xmss-tree .edge { stroke: var(--c-0a9396); stroke-width: 1.5; }
+.xmss-tree .bracket { stroke: currentColor; stroke-width: 1; opacity: 0.6; }
+.xmss-tree .tree-node { fill: var(--background-color); stroke: var(--c-0a9396); stroke-width: 2; }
+.xmss-tree .ots-node { fill: var(--c-ca6702); }
+.xmss-tree .ots-edge { stroke: var(--c-ca6702); stroke-width: 1.5; }
+.xmss-tree .ots-edge.faint { opacity: 0.5; stroke-width: 1; }
+.xmss-tree .chain-value { fill: none; stroke: var(--c-ca6702); stroke-width: 1; }
+.xmss-tree .chain-end { fill: var(--c-ca6702); }
+.xmss-tree .label { fill: currentColor; font-size: 11px; font-family: ui-monospace, monospace; }
+.xmss-tree .ots-label { fill: var(--c-ca6702); }
+
+/* Parameter groups, colored per group */
+.grouped {
+  border-left: 3px solid var(--group-color);
+  padding-left: 0.6rem;
+}
+.grouped input[type="range"], .grouped input[type="checkbox"] { accent-color: var(--group-color); }
+.grouped > label { margin-bottom: 0; padding-bottom: 1rem; }
+.group-start { margin-top: 1rem; }
+.parameters h3 + .group-start { margin-top: 0; }
+.parameter-group {
+  margin: 0 0 0.5rem;
+  color: var(--group-color);
+  font-size: 0.85rem;
+}
+
+/* Result rows colored by parameter group */
+.result-row.grouped { border-left: 3px solid var(--group-color); padding-left: 0.5rem; }
+.group-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: -0.25rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+}
+.group-legend li { display: flex; align-items: center; gap: 0.35rem; color: var(--group-color); }
+.group-legend li::before {
+  content: "";
+  width: 3px;
+  height: 1em;
+  background: var(--group-color);
+}

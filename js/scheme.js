@@ -66,5 +66,10 @@ export const approx = (x) => (x < 2 ** 40
   ? Math.round(x).toLocaleString()
   : `\\(2^{${Math.log2(x).toFixed(1)}}\\)`);
 
-export const bytes = (bits) => (bits / 8).toLocaleString() + ' B';
+export const bytes = (bits) => {
+  const b = bits / 8;
+  if (b >= 2 ** 30) return (b / 2 ** 30).toFixed(1) + ' GiB';
+  if (b >= 2 ** 20) return (b / 2 ** 20).toFixed(1) + ' MiB';
+  return Math.ceil(b).toLocaleString() + ' B';
+};
 export const num = (x) => x.toLocaleString();
