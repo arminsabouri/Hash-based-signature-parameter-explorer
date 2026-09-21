@@ -332,3 +332,5 @@ button.wots-digit { cursor: pointer; }
   border-radius: 3px 0 0 3px;
 }
 .chain-group .wots-index { width: 2.75rem; }
+.chain-group.omitted .wots-row-inner { opacity: 0.4; }
+.chain-group.omitted .chain-cell { background: transparent; border-style: dashed; }

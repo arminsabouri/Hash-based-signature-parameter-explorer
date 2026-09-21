@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'wots-c'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -60,6 +60,8 @@
               @click="selected = 'lamport'; history.replaceState(null, '', '#lamport')">Lamport OTS</button>
       <button type="button" role="tab" :aria-selected="selected === 'wots'"
               @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW</button>
+      <button type="button" role="tab" :aria-selected="selected === 'wots-c'"
+              @click="selected = 'wots-c'; history.replaceState(null, '', '#wots-c')">WOTS+C</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -193,6 +195,78 @@
         <aside class="results" data-template="results-panel"></aside>
       </div>
     </section>
+
+    <section class="scheme" x-data="scheme('wots-c')" x-show="selected === 'wots-c'">
+      <h2 x-text="config.title"></h2>
+      <p class="scheme-intro">
+        WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
+        digest \(d = \mathrm{Th}(P, T^*, m \,\|\, \mathrm{count})\), written as \(\mathrm{len}_1\) base-\(w\)
+        digits \(a_i\), has its first \(l = \mathrm{len}_1 - z\) digits summing to \(S_{w,n}\) and its last
+        \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
+        values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
+        value earlier than the one revealed.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="wotsCChains">
+          <h3>Visualization</h3>
+
+          <div class="wots-chains">
+            <div class="wots-row wots-header">
+              <div class="wots-track">
+                <span>\(sk_i\)</span><span>\(pk_i\)</span>
+              </div>
+            </div>
+
+            <div class="chain-group">
+              <div class="chain-bracket" x-katex="'\\(l\\) chains'"></div>
+              <div class="chain-rows">
+                <template x-for="(i, k) in rows" :key="k">
+                  <div class="wots-row">
+                    <template x-if="i === null">
+                      <div class="wots-ellipsis">&vellip;</div>
+                    </template>
+                    <template x-if="i !== null">
+                      <div class="wots-row-inner">
+                        <div class="wots-index" x-html="katex.renderToString('i=' + (i + 1))"></div>
+                        <div class="wots-digit" x-text="digits[i]"></div>
+                        <div class="wots-track" x-effect="$el.replaceChildren(...chainCells(digits[i]))"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <template x-if="state.z > 0">
+              <div class="chain-group omitted">
+                <div class="chain-bracket" x-katex="'\\(z\\) zero-chains'"></div>
+                <div class="chain-rows">
+                  <template x-for="j in zeroRows" :key="j">
+                    <div class="wots-row">
+                      <div class="wots-row-inner">
+                        <div class="wots-index" x-html="katex.renderToString('i=' + (l + j + 1))"></div>
+                        <div class="wots-digit">0</div>
+                        <div class="wots-track" x-effect="$el.replaceChildren(...chainCells(0))"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <p class="hint" x-katex="'\\(\\sum_{i=1}^{l} a_i = ' + digitSum + '\\)'"></p>
+          <p class="hint">A digest that meets both conditions, resampled when a parameter changes. Filled values are
+            revealed in the signature; shaded values are computed by the signer, outlined values by the verifier.
+            Zero-chains are not part of the signature.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
   </main>
 
   <!-- Panels shared by every scheme section, rendered from its config. -->
@@ -205,7 +279,7 @@
             <span><span x-katex="p.label"></span>: <output x-text="p.display ? p.display(state[p.key]) : state[p.key]"></output>
               <button type="button" class="tooltip-icon" :aria-describedby="tooltipId(p.key)">i</button></span>
             <span class="tooltip" role="tooltip" :id="tooltipId(p.key)" x-katex="p.tooltip"></span>
-            <input type="range" :min="p.min" :max="p.max" :step="p.step" :list="p.ticks && ticksId(p.key)"
+            <input type="range" :min="bound(p, 'min')" :max="bound(p, 'max')" :step="p.step" :list="p.ticks && ticksId(p.key)"
                    x-model.number="state[p.key]">
             <template x-if="p.ticks">
               <datalist :id="ticksId(p.key)">

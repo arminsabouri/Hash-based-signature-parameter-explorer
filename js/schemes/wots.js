@@ -27,7 +27,7 @@ export function digits(x, w, count) {
 }
 
 // Distribution of the message digit sum S for a uniformly random n-bit message.
-function digitSumDistribution(w, len1, topBits) {
+export function digitSumDistribution(w, len1, topBits) {
   let dist = [1];
   const ranges = [2 ** topBits, ...new Array(len1 - 1).fill(w)];
   for (const r of ranges) {
@@ -234,26 +234,29 @@ export function wotsChains() {
       return [...Array(this.lengths.w).keys()];
     },
 
-    // DOM for one chain with the value at position `digit` revealed. Positions
-    // are cells when w <= 16 and a proportional bar otherwise.
     chainCells(digit) {
-      const w = this.lengths.w;
-      const el = (cls, style) => {
-        const d = document.createElement('div');
-        d.className = cls;
-        if (style) d.style.cssText = style;
-        return d;
-      };
-      if (w <= 16) {
-        return Array.from({ length: w }, (_, j) =>
-          el('chain-cell ' + (j < digit ? 'signer' : j === digit ? 'revealed' : 'verifier')));
-      }
-      const pct = (x) => (100 * x) / (w - 1);
-      return [
-        el('chain-bar signer', `width: ${pct(digit)}%`),
-        el('chain-bar-marker', `left: ${pct(digit)}%`),
-        el('chain-bar verifier', `left: ${pct(digit)}%; width: ${100 - pct(digit)}%`),
-      ];
+      return chainCells(this.lengths.w, digit);
     },
   };
+}
+
+// DOM for one chain with the value at position `digit` revealed. Positions
+// are cells when w <= 16 and a proportional bar otherwise.
+export function chainCells(w, digit) {
+  const el = (cls, style) => {
+    const d = document.createElement('div');
+    d.className = cls;
+    if (style) d.style.cssText = style;
+    return d;
+  };
+  if (w <= 16) {
+    return Array.from({ length: w }, (_, j) =>
+      el('chain-cell ' + (j < digit ? 'signer' : j === digit ? 'revealed' : 'verifier')));
+  }
+  const pct = (x) => (100 * x) / (w - 1);
+  return [
+    el('chain-bar signer', `width: ${pct(digit)}%`),
+    el('chain-bar-marker', `left: ${pct(digit)}%`),
+    el('chain-bar verifier', `left: ${pct(digit)}%; width: ${100 - pct(digit)}%`),
+  ];
 }
