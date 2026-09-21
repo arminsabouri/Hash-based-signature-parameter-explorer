@@ -227,3 +227,6 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
   border-right: none;
   border-radius: 3px 0 0 3px;
 }
+
+.result-row { display: contents; }
+.explorer .tooltip-icon + .tooltip, .explorer span > .tooltip { font-weight: normal; }

@@ -1,7 +1,24 @@
-import { lamport } from './lamport.js';
+import { scheme } from './scheme.js';
+import lamport, { lamportGrid } from './schemes/lamport.js';
 
-// Alpine components are registered here. This module loads before the
-// deferred Alpine script, so the listener is in place when Alpine starts.
+const schemes = { lamport };
+
+// Fill panel placeholders from their <template> before Alpine walks the DOM.
+// This module loads before the deferred Alpine script.
+for (const el of document.querySelectorAll('[data-template]')) {
+  el.append(document.getElementById(el.dataset.template).content.cloneNode(true));
+}
+
 document.addEventListener('alpine:init', () => {
-  Alpine.data('lamport', lamport);
+  // Typesets text containing \( \) math with KaTeX whenever the value changes.
+  Alpine.directive('katex', (el, { expression }, { evaluateLater, effect }) => {
+    const get = evaluateLater(expression);
+    effect(() => get((value) => {
+      el.textContent = value ?? '';
+      renderMathInElement(el);
+    }));
+  });
+
+  Alpine.data('scheme', (id) => scheme(schemes[id]));
+  Alpine.data('lamportGrid', lamportGrid);
 });

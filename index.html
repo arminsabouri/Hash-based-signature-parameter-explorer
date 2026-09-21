@@ -55,8 +55,8 @@
       </p>
     </section>
 
-    <section id="lamport" class="scheme" x-data="lamport">
-      <h2>Lamport OTS</h2>
+    <section id="lamport" class="scheme" x-data="scheme('lamport')">
+      <h2 x-text="config.title"></h2>
       <p class="scheme-intro">
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
@@ -66,38 +66,9 @@
       </p>
 
       <div class="explorer">
-        <aside class="parameters">
-          <h3>Parameters</h3>
+        <aside class="parameters" data-template="parameters-panel"></aside>
 
-          <label>
-            <span>\(n\) (message bits): <output x-text="n"></output>
-              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-n">i</button></span>
-            <span class="tooltip" role="tooltip" id="lamport-tip-n">
-              Length of the signed message in bits. Each bit has two secret values, so key and signature sizes grow linearly with \(n\).
-            </span>
-            <input type="range" min="1" max="512" step="1" x-model.number="n">
-          </label>
-
-          <label>
-            <span>\(N\) (hash output bits): <output x-text="N"></output>
-              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-N">i</button></span>
-            <span class="tooltip" role="tooltip" id="lamport-tip-N">
-              Output length of the hash function in bits. Every secret value, public key element, and signature element is \(N\) bits.
-            </span>
-            <input type="range" min="8" max="256" step="8" x-model.number="N">
-          </label>
-
-          <label class="toggle">
-            <input type="checkbox" x-model="seedBased">
-            <span>Seed-based generation of secret keys
-              <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-seed">i</button></span>
-            <span class="tooltip" role="tooltip" id="lamport-tip-seed">
-              Secret values are derived from one seed with a \(\mathbf{PRF}\) instead of being stored. The secret key shrinks to the seed, and signing recomputes the revealed values.
-            </span>
-          </label>
-        </aside>
-
-        <div class="visualization">
+        <div class="visualization" x-data="lamportGrid">
           <h3>Visualization</h3>
 
           <div class="lamport-grid">
@@ -140,62 +111,73 @@
           <p class="hint">Click a message bit to flip it. Filled \(sk\) values are revealed in the signature; outlined \(pk\) values are the ones the verifier checks.</p>
         </div>
 
-        <aside class="results">
-          <h3>Results</h3>
-
-          <dl>
-            <dt>Secret key</dt>
-            <dd x-text="bytes(skBits)"></dd>
-            <dt>Public key</dt>
-            <dd x-text="bytes(pkBits)"></dd>
-            <dt>Signature</dt>
-            <dd x-text="bytes(sigBits)"></dd>
-          </dl>
-
-          <h4>Hash calls <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-calls">i</button><span class="tooltip" role="tooltip" id="lamport-tip-calls">Key generation hashes all \(2n\) secret values. Signing only reveals values, plus \(n\) \(\mathbf{PRF}\) calls to rederive them when seed-based. Verification hashes the \(n\) revealed values.</span></h4>
-          <dl>
-            <dt>Key generation</dt>
-            <dd>
-              <span x-text="num(keygenHashCalls)"></span>
-              \(\mathrm{Th}\)
-              <span x-show="keygenPrfCalls">+ <span x-text="num(keygenPrfCalls)"></span> \(\mathbf{PRF}\)</span>
-            </dd>
-            <dt>Signing</dt>
-            <dd>
-              <span x-show="!signPrfCalls">0</span>
-              <span x-show="signPrfCalls"><span x-text="num(signPrfCalls)"></span> \(\mathbf{PRF}\)</span>
-            </dd>
-            <dt>Verification</dt>
-            <dd>
-              <span x-text="num(verifyHashCalls)"></span>
-              \(\mathrm{Th}\)
-            </dd>
-          </dl>
-
-          <h4>SHA-256 compressions <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-compr">i</button><span class="tooltip" role="tooltip" id="lamport-tip-compr">An \(L\)-byte input costs \(\lceil (L+9)/64 \rceil\) compressions. Calls follow FIPS 205: a cached \(\mathrm{PK.seed}\) block, then a 22-byte \(\mathrm{ADRS}^c\) and the input. The cached block adds one compression per operation.</span></h4>
-          <dl>
-            <dt>Key generation</dt>
-            <dd x-text="num(keygenCompressions)"></dd>
-            <dt>Signing</dt>
-            <dd x-text="num(signCompressions)"></dd>
-            <dt>Verification</dt>
-            <dd x-text="num(verifyCompressions)"></dd>
-          </dl>
-
-          <h4>Signature budget</h4>
-          <dl>
-            <dt>Signatures per key pair <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-budget">i</button><span class="tooltip" role="tooltip" id="lamport-tip-budget">Signing two different messages reveals both secret values at every bit where they differ.</span></dt>
-            <dd>1</dd>
-          </dl>
-
-          <h4>Block space</h4>
-          <dl>
-            <dt>Signature + public key per 4,000,000 WU block <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-block">i</button><span class="tooltip" role="tooltip" id="lamport-tip-block">The BIP 141 block weight limit divided by signature plus public key bytes, counted as witness data at 1 WU per byte. Transaction overhead is not included.</span></dt>
-            <dd x-text="num(perBlock)"></dd>
-          </dl>
-        </aside>
+        <aside class="results" data-template="results-panel"></aside>
       </div>
     </section>
   </main>
+
+  <!-- Panels shared by every scheme section, rendered from its config. -->
+  <template id="parameters-panel">
+    <h3>Parameters</h3>
+    <template x-for="p in config.parameters" :key="p.key">
+      <div>
+        <template x-if="p.type === 'range'">
+          <label>
+            <span><span x-katex="p.label"></span>: <output x-text="p.display ? p.display(state[p.key]) : state[p.key]"></output>
+              <button type="button" class="tooltip-icon" :aria-describedby="tooltipId(p.key)">i</button></span>
+            <span class="tooltip" role="tooltip" :id="tooltipId(p.key)" x-katex="p.tooltip"></span>
+            <input type="range" :min="p.min" :max="p.max" :step="p.step" :list="p.ticks && ticksId(p.key)"
+                   x-model.number="state[p.key]">
+            <template x-if="p.ticks">
+              <datalist :id="ticksId(p.key)">
+                <template x-for="t in p.ticks" :key="t"><option :value="t"></option></template>
+              </datalist>
+            </template>
+          </label>
+        </template>
+        <template x-if="p.type === 'checkbox'">
+          <label class="toggle">
+            <input type="checkbox" x-model="state[p.key]">
+            <span><span x-katex="p.label"></span>
+              <button type="button" class="tooltip-icon" :aria-describedby="tooltipId(p.key)">i</button></span>
+            <span class="tooltip" role="tooltip" :id="tooltipId(p.key)" x-katex="p.tooltip"></span>
+          </label>
+        </template>
+      </div>
+    </template>
+  </template>
+
+  <template id="results-panel">
+    <h3>Results</h3>
+    <template x-for="(group, g) in config.results" :key="g">
+      <div>
+        <template x-if="group.heading">
+          <h4><span x-text="group.heading"></span>
+            <template x-if="group.tooltip">
+              <span>
+                <button type="button" class="tooltip-icon" :aria-describedby="tooltipId('g' + g)">i</button>
+                <span class="tooltip" role="tooltip" :id="tooltipId('g' + g)" x-katex="group.tooltip"></span>
+              </span>
+            </template>
+          </h4>
+        </template>
+        <dl>
+          <template x-for="(row, r) in group.rows" :key="r">
+            <div class="result-row">
+              <dt><span x-katex="row.label"></span>
+                <template x-if="row.tooltip">
+                  <span>
+                    <button type="button" class="tooltip-icon" :aria-describedby="tooltipId('g' + g, 'r' + r)">i</button>
+                    <span class="tooltip" role="tooltip" :id="tooltipId('g' + g, 'r' + r)" x-katex="row.tooltip"></span>
+                  </span>
+                </template>
+              </dt>
+              <dd x-katex="row.value(derived)"></dd>
+            </div>
+          </template>
+        </dl>
+      </div>
+    </template>
+  </template>
 </body>
 </html>
