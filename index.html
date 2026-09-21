@@ -6,6 +6,19 @@
   <title>Hash Based Digital Signature Parameter Explorer</title>
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/main.js"></script>
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.css"
+    integrity="sha384-JctiRyLzXCrSoOOzFlSoWLdyzQl7OrrRnhyeBmzB6ZWtcjccUyc8lCQJqIbs3uQX"
+    crossorigin="anonymous">
+  <script defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.js"
+    integrity="sha384-+7Keh381hSkXmXqnjC0JBM/kzsN6TFj+wMKychSLjTvJ8/0ElMde2uKl8i6p6Buj"
+    crossorigin="anonymous"></script>
+  <script defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/contrib/auto-render.min.js"
+    integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz"
+    crossorigin="anonymous"
+    onload="renderMathInElement(document.body)"></script>
   <script defer
     src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/dist/cdn.min.js"
     integrity="sha384-5/joNqFnRyVWzXp99bHot6RHG+EksGp+USSgZwPar7T9SD9PKKER37n/8bXBAZGd"
@@ -45,10 +58,10 @@
     <section id="lamport" class="scheme" x-data="lamport">
       <h2>Lamport OTS</h2>
       <p class="scheme-intro">
-        For each of the n message bits the signer holds two secret values, sk<sub>i,0</sub> and sk<sub>i,1</sub>,
-        and publishes their hashes as the public key. Signing reveals, for each bit m<sub>i</sub>, the secret
-        value sk<sub>i,m<sub>i</sub></sub>. The verifier hashes each revealed value and compares it with
-        pk<sub>i,m<sub>i</sub></sub>.
+        For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
+        and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
+        value \(sk_{i,m_i}\). The verifier hashes each revealed value and compares it with
+        \(pk_{i,m_i}\).
       </p>
 
       <div class="explorer">
@@ -56,12 +69,12 @@
           <h3>Parameters</h3>
 
           <label>
-            <span>n (message bits): <output x-text="n"></output></span>
+            <span>\(n\) (message bits): <output x-text="n"></output></span>
             <input type="range" min="1" max="512" step="1" x-model.number="n">
           </label>
 
           <label>
-            <span>N (hash output bits): <output x-text="N"></output></span>
+            <span>\(N\) (hash output bits): <output x-text="N"></output></span>
             <input type="range" min="8" max="256" step="8" x-model.number="N">
           </label>
 
@@ -81,12 +94,12 @@
 
           <div class="lamport-grid">
             <div class="lamport-col lamport-legend">
-              <div class="cell label">m<sub>i</sub></div>
-              <div class="cell label">sk<sub>i,0</sub></div>
-              <div class="cell label">sk<sub>i,1</sub></div>
-              <div class="cell label arrow" x-text="hashName"></div>
-              <div class="cell label">pk<sub>i,0</sub></div>
-              <div class="cell label">pk<sub>i,1</sub></div>
+              <div class="cell label">\(m_i\)</div>
+              <div class="cell label">\(sk_{i,0}\)</div>
+              <div class="cell label">\(sk_{i,1}\)</div>
+              <div class="cell label arrow"><span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span></div>
+              <div class="cell label">\(pk_{i,0}\)</div>
+              <div class="cell label">\(pk_{i,1}\)</div>
             </div>
 
             <template x-for="(i, k) in columns" :key="k">
@@ -103,14 +116,14 @@
                     <div class="cell arrow">&darr;</div>
                     <div class="cell pk" :class="message[i] === 0 && 'checked'"></div>
                     <div class="cell pk" :class="message[i] === 1 && 'checked'"></div>
-                    <div class="col-index" x-text="'i=' + (i + 1)"></div>
+                    <div class="col-index" x-html="katex.renderToString('i=' + (i + 1))"></div>
                   </div>
                 </template>
               </div>
             </template>
           </div>
 
-          <p class="hint">Click a message bit to flip it. Filled sk values are revealed in the signature; outlined pk values are the ones the verifier checks.</p>
+          <p class="hint">Click a message bit to flip it. Filled \(sk\) values are revealed in the signature; outlined \(pk\) values are the ones the verifier checks.</p>
         </div>
 
         <aside class="results">
@@ -129,13 +142,20 @@
           <dl>
             <dt>Key generation</dt>
             <dd>
-              <span x-text="num(keygenHashCalls) + ' ' + hashName"></span>
-              <template x-if="keygenPrfCalls"><span x-text="' + ' + num(keygenPrfCalls) + ' PRF'"></span></template>
+              <span x-text="num(keygenHashCalls)"></span>
+              <span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span>
+              <span x-show="keygenPrfCalls">+ <span x-text="num(keygenPrfCalls)"></span> \(\mathbf{PRF}\)</span>
             </dd>
             <dt>Signing</dt>
-            <dd x-text="signPrfCalls ? num(signPrfCalls) + ' PRF' : '0'"></dd>
+            <dd>
+              <span x-show="!signPrfCalls">0</span>
+              <span x-show="signPrfCalls"><span x-text="num(signPrfCalls)"></span> \(\mathbf{PRF}\)</span>
+            </dd>
             <dt>Verification</dt>
-            <dd x-text="num(verifyHashCalls) + ' ' + hashName"></dd>
+            <dd>
+              <span x-text="num(verifyHashCalls)"></span>
+              <span x-show="tweakable">\(\mathrm{Th}\)</span><span x-show="!tweakable">\(F\)</span>
+            </dd>
           </dl>
 
           <h4>SHA-256 compressions</h4>
@@ -152,10 +172,6 @@
           <dl>
             <dt>Signatures per key pair</dt>
             <dd>1</dd>
-            <dt>Classical (bits)</dt>
-            <dd x-text="classicalBits.toFixed(1)"></dd>
-            <dt>Quantum (bits)</dt>
-            <dd x-text="quantumBits.toFixed(1)"></dd>
           </dl>
 
           <h4>Block space</h4>
@@ -167,9 +183,8 @@
           <details class="notes">
             <summary>Assumptions</summary>
             <ul>
-              <li>The public parameter P is N bits.</li>
-              <li>SHA-256 compressions follow the FIPS 205 SHA2 instantiation: SHA-256(PK.seed &Vert; toByte(0, 64&minus;n) &Vert; ADRS<sup>c</sup> &Vert; M) with a 22-byte ADRS<sup>c</sup> and the PK.seed block cached as a midstate (counted once per operation). Without tweaks, F is SHA-256 of the input and PRF is SHA-256(SK.seed &Vert; ADRS<sup>c</sup>).</li>
-              <li>Security is generic preimage search query complexity. Without tweaks the paper gives a per-try success probability of n/|Y| (n unrevealed targets); with tweaks, 1/|Y|. Quantum assumes Grover's square-root speedup (Section 12).</li>
+              <li>The public parameter \(P\) is \(N\) bits.</li>
+              <li>SHA-256 compressions follow the FIPS 205 SHA2 instantiation: \(\text{SHA-256}(\mathrm{PK.seed} \,\|\, \mathrm{toByte}(0, 64-n) \,\|\, \mathrm{ADRS}^c \,\|\, M)\) with a 22-byte \(\mathrm{ADRS}^c\) and the \(\mathrm{PK.seed}\) block cached as a midstate (counted once per operation). Without tweaks, \(F\) is SHA-256 of the input and \(\mathbf{PRF}\) is \(\text{SHA-256}(\mathrm{SK.seed} \,\|\, \mathrm{ADRS}^c)\).</li>
               <li>Block space counts only signature and public key bytes as witness data (1 WU per byte), with no transaction overhead.</li>
             </ul>
           </details>

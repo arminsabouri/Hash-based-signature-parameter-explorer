@@ -29,10 +29,6 @@ export function lamport() {
       return [0, 1, 2, 3, null, n - 2, n - 1];
     },
 
-    get hashName() {
-      return this.tweakable ? 'Th' : 'F';
-    },
-
     // Sizes in bits. The public parameter P is taken to be N bits.
     get pBits() { return this.tweakable ? this.N : 0; },
     get skBits() { return (this.seedBased ? this.N : 2 * this.n * this.N) + this.pBits; },
@@ -65,15 +61,6 @@ export function lamport() {
     },
     get verifyCompressions() {
       return this.verifyHashCalls * this.hashCompressions + this.midstate;
-    },
-
-    // Generic preimage search. Without tweaks each try can hit any of the n
-    // unrevealed public key elements (success n/|Y|); with tweaks, 1/|Y|.
-    get classicalBits() {
-      return this.tweakable ? this.N : this.N - Math.log2(this.n);
-    },
-    get quantumBits() {
-      return this.classicalBits / 2;
     },
 
     // BIP 141 block weight limit; witness bytes weigh 1 WU each.

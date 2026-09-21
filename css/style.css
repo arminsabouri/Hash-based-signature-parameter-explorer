@@ -162,3 +162,5 @@ main:has(.scheme) { max-width: 80rem; }
 h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 .results dl { grid-template-columns: minmax(0, 1fr) auto; }
 .context, .scheme-intro { overflow-wrap: anywhere; }
+
+.cell .katex, .col-index .katex { font-size: 1em; }
