@@ -111,9 +111,6 @@ main:has(.scheme) { max-width: 80rem; }
 }
 .results dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 
-.notes { margin-top: 1rem; font-size: 0.8rem; }
-.notes ul { padding-left: 1.1rem; }
-
 .hint { font-size: 0.8rem; }
 
 /* Lamport grid */

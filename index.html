@@ -168,7 +168,7 @@
             <dd x-text="num(verifyCompressions)"></dd>
           </dl>
 
-          <h4>Security</h4>
+          <h4>Signature budget</h4>
           <dl>
             <dt>Signatures per key pair</dt>
             <dd>1</dd>
@@ -179,15 +179,6 @@
             <dt>Signature + public key per 4,000,000 WU block</dt>
             <dd x-text="num(perBlock)"></dd>
           </dl>
-
-          <details class="notes">
-            <summary>Assumptions</summary>
-            <ul>
-              <li>The public parameter \(P\) is \(N\) bits.</li>
-              <li>SHA-256 compressions follow the FIPS 205 SHA2 instantiation: \(\text{SHA-256}(\mathrm{PK.seed} \,\|\, \mathrm{toByte}(0, 64-n) \,\|\, \mathrm{ADRS}^c \,\|\, M)\) with a 22-byte \(\mathrm{ADRS}^c\) and the \(\mathrm{PK.seed}\) block cached as a midstate (counted once per operation). Without tweaks, \(F\) is SHA-256 of the input and \(\mathbf{PRF}\) is \(\text{SHA-256}(\mathrm{SK.seed} \,\|\, \mathrm{ADRS}^c)\).</li>
-              <li>Block space counts only signature and public key bytes as witness data (1 WU per byte), with no transaction overhead.</li>
-            </ul>
-          </details>
         </aside>
       </div>
     </section>
