@@ -41,6 +41,141 @@
         scripts.
       </p>
     </section>
+
+    <section id="lamport" class="scheme" x-data="lamport">
+      <h2>Lamport OTS</h2>
+      <p class="scheme-intro">
+        For each of the n message bits the signer holds two secret values, sk<sub>i,0</sub> and sk<sub>i,1</sub>,
+        and publishes their hashes as the public key. Signing reveals, for each bit m<sub>i</sub>, the secret
+        value sk<sub>i,m<sub>i</sub></sub>. The verifier hashes each revealed value and compares it with
+        pk<sub>i,m<sub>i</sub></sub>.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters">
+          <h3>Parameters</h3>
+
+          <label>
+            <span>n (message bits): <output x-text="n"></output></span>
+            <input type="range" min="1" max="512" step="1" x-model.number="n">
+          </label>
+
+          <label>
+            <span>N (hash output bits): <output x-text="N"></output></span>
+            <input type="range" min="8" max="256" step="8" x-model.number="N">
+          </label>
+
+          <label class="toggle">
+            <input type="checkbox" x-model="tweakable">
+            <span>Tweakable hash function</span>
+          </label>
+
+          <label class="toggle">
+            <input type="checkbox" x-model="seedBased">
+            <span>Seed-based generation of secret keys</span>
+          </label>
+        </aside>
+
+        <div class="visualization">
+          <h3>Visualization</h3>
+
+          <div class="lamport-grid">
+            <div class="lamport-col lamport-legend">
+              <div class="cell label">m<sub>i</sub></div>
+              <div class="cell label">sk<sub>i,0</sub></div>
+              <div class="cell label">sk<sub>i,1</sub></div>
+              <div class="cell label arrow" x-text="hashName"></div>
+              <div class="cell label">pk<sub>i,0</sub></div>
+              <div class="cell label">pk<sub>i,1</sub></div>
+            </div>
+
+            <template x-for="(i, k) in columns" :key="k">
+              <div class="lamport-col" :class="i === null && 'ellipsis'">
+                <template x-if="i === null">
+                  <div class="cell ellipsis-cell">&hellip;</div>
+                </template>
+                <template x-if="i !== null">
+                  <div class="lamport-col-inner">
+                    <button type="button" class="cell bit" @click="flip(i)" x-text="message[i]"
+                            :title="'Flip bit ' + (i + 1)"></button>
+                    <div class="cell sk" :class="message[i] === 0 && 'revealed'"></div>
+                    <div class="cell sk" :class="message[i] === 1 && 'revealed'"></div>
+                    <div class="cell arrow">&darr;</div>
+                    <div class="cell pk" :class="message[i] === 0 && 'checked'"></div>
+                    <div class="cell pk" :class="message[i] === 1 && 'checked'"></div>
+                    <div class="col-index" x-text="'i=' + (i + 1)"></div>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+
+          <p class="hint">Click a message bit to flip it. Filled sk values are revealed in the signature; outlined pk values are the ones the verifier checks.</p>
+        </div>
+
+        <aside class="results">
+          <h3>Results</h3>
+
+          <dl>
+            <dt>Secret key</dt>
+            <dd x-text="bytes(skBits)"></dd>
+            <dt>Public key</dt>
+            <dd x-text="bytes(pkBits)"></dd>
+            <dt>Signature</dt>
+            <dd x-text="bytes(sigBits)"></dd>
+          </dl>
+
+          <h4>Hash calls</h4>
+          <dl>
+            <dt>Key generation</dt>
+            <dd>
+              <span x-text="num(keygenHashCalls) + ' ' + hashName"></span>
+              <template x-if="keygenPrfCalls"><span x-text="' + ' + num(keygenPrfCalls) + ' PRF'"></span></template>
+            </dd>
+            <dt>Signing</dt>
+            <dd x-text="signPrfCalls ? num(signPrfCalls) + ' PRF' : '0'"></dd>
+            <dt>Verification</dt>
+            <dd x-text="num(verifyHashCalls) + ' ' + hashName"></dd>
+          </dl>
+
+          <h4>SHA-256 compressions</h4>
+          <dl>
+            <dt>Key generation</dt>
+            <dd x-text="num(keygenCompressions)"></dd>
+            <dt>Signing</dt>
+            <dd x-text="num(signCompressions)"></dd>
+            <dt>Verification</dt>
+            <dd x-text="num(verifyCompressions)"></dd>
+          </dl>
+
+          <h4>Security</h4>
+          <dl>
+            <dt>Signatures per key pair</dt>
+            <dd>1</dd>
+            <dt>Classical (bits)</dt>
+            <dd x-text="classicalBits.toFixed(1)"></dd>
+            <dt>Quantum (bits)</dt>
+            <dd x-text="quantumBits.toFixed(1)"></dd>
+          </dl>
+
+          <h4>Block space</h4>
+          <dl>
+            <dt>Signature + public key per 4,000,000 WU block</dt>
+            <dd x-text="num(perBlock)"></dd>
+          </dl>
+
+          <details class="notes">
+            <summary>Assumptions</summary>
+            <ul>
+              <li>The public parameter P is N bits.</li>
+              <li>SHA-256 compressions follow the FIPS 205 SHA2 instantiation: SHA-256(PK.seed &Vert; toByte(0, 64&minus;n) &Vert; ADRS<sup>c</sup> &Vert; M) with a 22-byte ADRS<sup>c</sup> and the PK.seed block cached as a midstate (counted once per operation). Without tweaks, F is SHA-256 of the input and PRF is SHA-256(SK.seed &Vert; ADRS<sup>c</sup>).</li>
+              <li>Security is generic preimage search query complexity. Without tweaks the paper gives a per-try success probability of n/|Y| (n unrevealed targets); with tweaks, 1/|Y|. Quantum assumes Grover's square-root speedup (Section 12).</li>
+              <li>Block space counts only signature and public key bytes as witness data (1 WU per byte), with no transaction overhead.</li>
+            </ul>
+          </details>
+        </aside>
+      </div>
+    </section>
   </main>
 </body>
 </html>
