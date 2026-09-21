@@ -53,3 +53,22 @@ main {
 }
 
 a { color: var(--link-color); }
+
+header { text-align: center; }
+
+h1 { margin: 1.5rem 0 1rem; }
+
+.context {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--border-color);
+}
+
+.section-label {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}

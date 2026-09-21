@@ -13,7 +13,34 @@
 </head>
 <body>
   <main>
-    <h1>Hash Based Digital Signature Parameter Explorer</h1>
+    <header>
+      <h1>Hash Based Digital Signature Parameter Explorer</h1>
+    </header>
+
+    <section class="context">
+      <p class="section-label">// context</p>
+      <p>
+        Bitcoin authorizes spending with ECDSA and Schnorr signatures over the secp256k1 curve.
+        Shor's algorithm would allow a sufficiently large quantum computer to solve the elliptic curve
+        discrete logarithm problem and forge these signatures. Hash-based signature schemes rely only on
+        properties of hash functions, which Bitcoin already depends on through SHA-256.
+        <a href="https://eprint.iacr.org/2025/2203" target="_blank" rel="noopener">Hash-based Signature Schemes for Bitcoin</a>
+        (Kudinov and Nick) surveys these schemes and their parameter selection for Bitcoin, and
+        <a href="https://github.com/SHRINCS/shrincs-bip/blob/main/SHRINCS.md" target="_blank" rel="noopener">SHRINCS</a>
+        specifies a scheme that combines a stateful component with a stateless
+        <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.205.pdf" target="_blank" rel="noopener">SLH-DSA (FIPS 205)</a>
+        component.
+      </p>
+      <p>
+        These schemes are assembled from a small set of building blocks: one-time signatures such as WOTS,
+        few-time signatures such as FORS, and Merkle trees that combine them. Each exposes parameters.
+        This site lets you adjust those parameters and see how they change signature size, public key size,
+        signing and verification cost, statefulness, and signature budget, in terms of block space and
+        transaction throughput. Figures can be cross-checked against the
+        <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
+        scripts.
+      </p>
+    </section>
   </main>
 </body>
 </html>
