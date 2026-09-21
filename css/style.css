@@ -1,0 +1,55 @@
+/* Palette: https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226 */
+:root {
+  --c-001219: #001219;
+  --c-005f73: #005f73;
+  --c-0a9396: #0a9396;
+  --c-94d2bd: #94d2bd;
+  --c-e9d8a6: #e9d8a6;
+  --c-ee9b00: #ee9b00;
+  --c-ca6702: #ca6702;
+  --c-bb3e03: #bb3e03;
+  --c-ae2012: #ae2012;
+  --c-9b2226: #9b2226;
+
+  color-scheme: light;
+  --background-color: var(--c-e9d8a6);
+  --color: var(--c-001219);
+  --link-color: var(--c-005f73);
+  --border-color: var(--c-0a9396);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background-color: var(--c-001219);
+    --color: var(--c-e9d8a6);
+    --link-color: var(--c-94d2bd);
+    --border-color: var(--c-0a9396);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background-color: var(--c-001219);
+  --color: var(--c-e9d8a6);
+  --link-color: var(--c-94d2bd);
+  --border-color: var(--c-0a9396);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background-color: var(--background-color);
+  color: var(--color);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+a { color: var(--link-color); }
