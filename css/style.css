@@ -162,7 +162,7 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 
 .cell .katex, .col-index .katex { font-size: 1em; }
 
-/* Parameter tooltips */
+/* Tooltips */
 .parameters label { position: relative; }
 .tooltip-icon {
   width: 1.1rem;
@@ -177,7 +177,7 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
   cursor: help;
   vertical-align: middle;
 }
-.parameters .tooltip {
+.explorer .tooltip {
   display: none;
   position: absolute;
   left: 0;
@@ -192,7 +192,14 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
   font-size: 0.8rem;
   line-height: 1.4;
 }
-.parameters label:has(.tooltip-icon:hover, .tooltip-icon:focus-visible) .tooltip { display: block; }
+.explorer :is(label, dt, h4):has(.tooltip-icon:hover, .tooltip-icon:focus-visible) .tooltip { display: block; }
+.results { position: relative; }
+.results .tooltip {
+  top: auto;
+  left: 0.75rem;
+  right: 0.75rem;
+  font-weight: normal;
+}
 
 /* Key brackets in the Lamport grid */
 .key-brackets {

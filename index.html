@@ -160,7 +160,7 @@
             <dd x-text="bytes(sigBits)"></dd>
           </dl>
 
-          <h4>Hash calls</h4>
+          <h4>Hash calls <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-calls">i</button><span class="tooltip" role="tooltip" id="lamport-tip-calls">Key generation hashes all \(2n\) secret values. Signing only reveals values, plus \(n\) \(\mathbf{PRF}\) calls to rederive them when seed-based. Verification hashes the \(n\) revealed values.</span></h4>
           <dl>
             <dt>Key generation</dt>
             <dd>
@@ -180,7 +180,7 @@
             </dd>
           </dl>
 
-          <h4>SHA-256 compressions</h4>
+          <h4>SHA-256 compressions <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-compr">i</button><span class="tooltip" role="tooltip" id="lamport-tip-compr">An \(L\)-byte input costs \(\lceil (L+9)/64 \rceil\) compressions. Tweakable calls follow FIPS 205: a cached \(\mathrm{PK.seed}\) block, then a 22-byte \(\mathrm{ADRS}^c\) and the input. The cached block adds one compression per operation.</span></h4>
           <dl>
             <dt>Key generation</dt>
             <dd x-text="num(keygenCompressions)"></dd>
@@ -192,13 +192,13 @@
 
           <h4>Signature budget</h4>
           <dl>
-            <dt>Signatures per key pair</dt>
+            <dt>Signatures per key pair <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-budget">i</button><span class="tooltip" role="tooltip" id="lamport-tip-budget">Signing two different messages reveals both secret values at every bit where they differ.</span></dt>
             <dd>1</dd>
           </dl>
 
           <h4>Block space</h4>
           <dl>
-            <dt>Signature + public key per 4,000,000 WU block</dt>
+            <dt>Signature + public key per 4,000,000 WU block <button type="button" class="tooltip-icon" aria-describedby="lamport-tip-block">i</button><span class="tooltip" role="tooltip" id="lamport-tip-block">The BIP 141 block weight limit divided by signature plus public key bytes, counted as witness data at 1 WU per byte. Transaction overhead is not included.</span></dt>
             <dd x-text="num(perBlock)"></dd>
           </dl>
         </aside>
