@@ -7,7 +7,13 @@ Static site built with plain HTML, CSS, and [Alpine.js](https://alpinejs.dev) (l
 ES modules do not load over `file://`, so serve the directory:
 
 ```sh
-python3 -m http.server
+just run
+```
+
+or without [just](https://github.com/casey/just):
+
+```sh
+python3 -m http.server 8000
 ```
 
 Then open http://localhost:8000.
