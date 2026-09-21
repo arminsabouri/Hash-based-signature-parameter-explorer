@@ -1,7 +1,8 @@
 import { scheme } from './scheme.js';
 import lamport, { lamportGrid } from './schemes/lamport.js';
+import wots, { wotsChains } from './schemes/wots.js';
 
-const schemes = { lamport };
+const schemes = { lamport, wots };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.
@@ -21,4 +22,5 @@ document.addEventListener('alpine:init', () => {
 
   Alpine.data('scheme', (id) => scheme(schemes[id]));
   Alpine.data('lamportGrid', lamportGrid);
+  Alpine.data('wotsChains', wotsChains);
 });

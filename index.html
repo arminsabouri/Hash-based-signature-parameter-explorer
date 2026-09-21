@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main>
+  <main x-data="{ selected: ['lamport', 'wots'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -55,7 +55,14 @@
       </p>
     </section>
 
-    <section id="lamport" class="scheme" x-data="scheme('lamport')">
+    <nav class="scheme-tabs" role="tablist">
+      <button type="button" role="tab" :aria-selected="selected === 'lamport'"
+              @click="selected = 'lamport'; history.replaceState(null, '', '#lamport')">Lamport OTS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'wots'"
+              @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW</button>
+    </nav>
+
+    <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
       <h2 x-text="config.title"></h2>
       <p class="scheme-intro">
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
@@ -109,6 +116,78 @@
           </div>
 
           <p class="hint">Click a message bit to flip it. Filled \(sk\) values are revealed in the signature; outlined \(pk\) values are the ones the verifier checks.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('wots')" x-show="selected === 'wots'">
+      <h2 x-text="config.title"></h2>
+      <p class="scheme-intro">
+        WOTS-TW signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
+        base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
+        \(C = \sum_i (w - 1 - b_i)\). Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
+        \(w - 1\) times to reach \(pk_i\). The signature reveals the value at position \(b_i\) of each chain, and
+        the verifier completes the remaining \(w - 1 - b_i\) steps. Any other message has at least one digit lower
+        than in the signed one, so a forgery needs a chain value earlier than the one revealed.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="wotsChains">
+          <h3>Visualization</h3>
+
+          <div class="wots-chains">
+            <div class="wots-row wots-header">
+              <div class="wots-index"></div>
+              <div class="wots-digit"></div>
+              <div class="wots-track">
+                <span>\(sk_i\)</span><span>\(pk_i\)</span>
+              </div>
+            </div>
+
+            <div class="chain-group">
+              <div class="chain-bracket">Message</div>
+              <div class="chain-rows">
+                <template x-for="(i, k) in messageRows" :key="k">
+                  <div class="wots-row">
+                    <template x-if="i === null">
+                      <div class="wots-ellipsis">&vellip;</div>
+                    </template>
+                    <template x-if="i !== null">
+                      <div class="wots-row-inner">
+                        <div class="wots-index" x-html="katex.renderToString('i=' + (i + 1))"></div>
+                        <button type="button" class="wots-digit" @click="bump(i)" x-text="messageDigits[i]"
+                                :title="'Increment digit ' + (i + 1)"></button>
+                        <div class="wots-track" x-effect="$el.replaceChildren(...chainCells(messageDigits[i]))"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="chain-group">
+              <div class="chain-bracket">Checksum</div>
+              <div class="chain-rows">
+                <template x-for="(c, j) in checksumDigits" :key="j">
+                  <div class="wots-row">
+                    <div class="wots-row-inner">
+                      <div class="wots-index" x-html="katex.renderToString('i=' + (lengths.len1 + j + 1))"></div>
+                      <div class="wots-digit" x-text="c"></div>
+                      <div class="wots-track" x-effect="$el.replaceChildren(...chainCells(c))"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint" x-katex="'Checksum \\(C = ' + checksum + '\\)'"></p>
+          <p class="hint">Click a message digit to increment it. Filled values are revealed in the signature;
+            shaded values are computed by the signer, outlined values by the verifier.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
