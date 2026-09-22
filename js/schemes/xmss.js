@@ -3,7 +3,7 @@ import * as messageHash from '../primitives/message-hash.js';
 import * as wotsC from '../primitives/wots-c.js';
 import { approx, bytes, num } from '../scheme.js';
 import { blockSpace, signatureBudget, successProbability, wcSearch } from '../common-results.js';
-import { drawChains, drawTree, svg } from '../draw.js';
+import { drawLeafChains, drawTree, svg } from '../draw.js';
 
 // XMSS with WOTS+C leaves, Section 7 of Kudinov and Nick, "Hash-based Signature
 // Schemes for Bitcoin". Balanced tree of height h.
@@ -149,18 +149,9 @@ function treeSvg(h, l, w) {
   g.text(bx + 8, tree.leafY + 4, `${tree.leafCount.toLocaleString()} leaves`, 'start', 'label ots-label');
 
   // The first leaf opened up into its chains.
-  const leafX = tree.slotX(0);
-  const top = tree.leafY + 46;
-  const busY = top - 16;
-  g.line(leafX, tree.leafY + 7, leafX, busY, 'ots-edge');
-  g.text(leafX + 8, tree.leafY + 26, 'WOTS+C public key = Th(pk\u2081, \u2026, pk\u2097)', 'start', 'label ots-label');
-  const chains = drawChains(g, { l, w, left: 120, top });
-  const endsX = chains.right + 24;
-  for (const end of chains.ends) g.line(end.x, end.y, endsX, busY, 'ots-edge faint');
-  g.line(endsX, busY, leafX, busY, 'ots-edge');
-  g.text(chains.right, chains.bottom + 30, `l = ${l} chains`, 'end', 'label ots-label');
+  const chains = drawLeafChains(g, { leafX: tree.slotX(0), leafY: tree.leafY, l, w });
 
-  return { svg: g.toString(), width: W, height: chains.bottom + 44 };
+  return { svg: g.toString(), width: W, height: chains.bottom };
 }
 
 // Visualization state, nested inside the scheme component.

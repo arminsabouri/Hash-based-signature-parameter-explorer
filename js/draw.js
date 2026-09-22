@@ -64,10 +64,12 @@ export function drawTree(g, { h, left, right, top, level = 40, radius = 7, leafS
 
 // l hash chains of w values each, as rows starting at (left, top). Rows are
 // elided when l > 5, and chains become a bar with the end cell when w > 16.
-// Labels sk_i, the value count, and pk_i under the first, middle, and last
-// positions. Returns the geometry for connecting lines.
-export function drawChains(g, { l, w, left, top, rowHeight = 16, cellWidth = 14, gap = 3 }) {
-  const rows = l <= 5 ? [...Array(l).keys()] : [0, 1, 2, null, l - 1];
+// With `compact`, only the first and last rows are drawn. Labels sk_i, the
+// value count, and pk_i under the first, middle, and last positions. Returns the geometry for connecting lines.
+export function drawChains(g, { l, w, left, top, compact = false, rowHeight = 16, cellWidth = 14, gap = 3 }) {
+  const rows = compact
+    ? (l <= 2 ? [...Array(l).keys()] : [0, null, l - 1])
+    : (l <= 5 ? [...Array(l).keys()] : [0, 1, 2, null, l - 1]);
   const cells = Math.min(w, 16);
   const right = left + cells * (cellWidth + gap) - gap;
   const ends = [];
@@ -116,4 +118,21 @@ export function chainCells(w, digit) {
     el('chain-bar-marker', `left: ${pct(digit)}%`),
     el('chain-bar verifier', `left: ${pct(digit)}%; width: ${100 - pct(digit)}%`),
   ];
+}
+
+// A leaf at (leafX, leafY) opened up into its l chains of w values, whose
+// ends Th compresses into the leaf. `notes` are extra label lines under the
+// leaf label, and `compact` draws only the first and last chains. Returns the bottom of the drawing, labels included.
+export function drawLeafChains(g, { leafX, leafY, l, w, notes = [], compact = false }) {
+  const top = leafY + 46 + 20 * notes.length;
+  const busY = top - 16;
+  g.line(leafX, leafY + 7, leafX, busY, 'ots-edge');
+  g.text(leafX + 8, leafY + 26, 'WOTS+C public key = Th(pk\u2081, \u2026, pk\u2097)', 'start', 'label ots-label');
+  notes.forEach((note, k) => g.text(leafX + 8, leafY + 40 + 14 * k, note, 'start', 'label ots-label'));
+  const chains = drawChains(g, { l, w, left: 120, top, compact });
+  const endsX = chains.right + 24;
+  for (const end of chains.ends) g.line(end.x, end.y, endsX, busY, 'ots-edge faint');
+  g.line(endsX, busY, leafX, busY, 'ots-edge');
+  g.text(chains.right, chains.bottom + 30, `l = ${l} chains`, 'end', 'label ots-label');
+  return { bottom: chains.bottom + 44 };
 }

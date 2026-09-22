@@ -322,8 +322,9 @@
           <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
                :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
 
-          <p class="hint">Each leaf is a WOTS+C public key and each inner node is \(\mathrm{Th}\) of its two children.
-            Layers are numbered from the bottom, and the top-layer root is the public key.</p>
+          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
+            Each inner node is \(\mathrm{Th}\) of its two children. Layers are numbered from the bottom, and the
+            top-layer root is the public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>

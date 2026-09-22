@@ -3,7 +3,7 @@ import * as messageHash from '../primitives/message-hash.js';
 import * as wotsC from '../primitives/wots-c.js';
 import { approx, bytes, num } from '../scheme.js';
 import { blockSpace, signatureBudget, successProbability, wcSearch } from '../common-results.js';
-import { drawTree, svg } from '../draw.js';
+import { drawLeafChains, drawTree, svg } from '../draw.js';
 
 // XMSS^MT with WOTS+C leaves, Section 8 of Kudinov and Nick, "Hash-based
 // Signature Schemes for Bitcoin". A hypertree of d layers of XMSS trees of
@@ -147,9 +147,9 @@ export default {
 
 // Structure diagram: the d layers stacked with the top layer first. A WOTS+C
 // leaf of each tree signs the root of the tree below it, and a bottom-layer
-// leaf signs the message digest. Layers between the top and bottom are
+// leaf, opened up into its chains, signs the message digest. Layers between the top and bottom are
 // elided when d > 3.
-function hypertreeSvg(hp, d) {
+function hypertreeSvg(hp, d, l, w) {
   const W = 560;
   const left = 90, right = W - 130, bx = W - 112;
   const g = svg();
@@ -189,19 +189,18 @@ function hypertreeSvg(hp, d) {
     top = tree.leafY + gap;
   }
 
-  // The bottom-layer leaf signs the message digest.
-  const msgY = from.y + 40;
-  g.line(from.x, from.y + 7, from.x, msgY - 12, 'ots-edge');
-  g.text(from.x, msgY, 'message digest', 'middle', 'label ots-label');
+  // A bottom-layer leaf opened up into its chains. It signs the message digest.
+  const leaf = drawLeafChains(g, { leafX: from.x, leafY: from.y, l, w, notes: ['signs the message digest'], compact: true });
 
-  return { svg: g.toString(), width: W, height: msgY + 14 };
+  return { svg: g.toString(), width: W, height: leaf.bottom };
 }
 
 // Visualization state, nested inside the scheme component.
 export function xmssMtTree() {
   return {
     get drawing() {
-      return hypertreeSvg(this.state.hp, this.state.d);
+      const { l, w } = wotsC.model({ ...this.state, compressed: true });
+      return hypertreeSvg(this.state.hp, this.state.d, l, w);
     },
   };
 }
