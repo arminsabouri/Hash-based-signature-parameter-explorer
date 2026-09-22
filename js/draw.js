@@ -136,3 +136,29 @@ export function drawLeafChains(g, { leafX, leafY, l, w, notes = [], compact = fa
   g.text(chains.right, chains.bottom + 30, `l = ${l} chains`, 'end', 'label ots-label');
   return { bottom: chains.bottom + 44 };
 }
+
+// Bracket from y1 to y2 at x, with label lines centered to its right.
+export function bracket(g, x, y1, y2, lines) {
+  g.line(x, y1, x, y2, 'bracket');
+  g.line(x - 4, y1, x, y1, 'bracket');
+  g.line(x - 4, y2, x, y2, 'bracket');
+  lines.forEach((s, k) => g.text(x + 8, (y1 + y2) / 2 + 4 + 16 * (k - (lines.length - 1) / 2), s, 'start'));
+}
+
+// Height bracket at x beside a tree drawn by drawTree, and its leaf count.
+export function annotateTree(g, tree, x, lines) {
+  bracket(g, x, tree.rootY, tree.leafY, lines);
+  g.text(x + 8, tree.leafY + 4, `${tree.leafCount.toLocaleString()} leaves`, 'start', 'label ots-label');
+}
+
+// A balanced tree of height h with WOTS+C leaves, the root labeled as the
+// public key, and the first leaf opened up into its l chains of w values.
+export function balancedTreeSvg({ h, lines, l, w, compact = false }) {
+  const W = 560;
+  const g = svg();
+  const tree = drawTree(g, { h, left: 40, right: W - 110, top: 30 });
+  g.text(tree.rootX, tree.rootY - 14, 'Public key (root)');
+  annotateTree(g, tree, W - 92, lines);
+  const leaf = drawLeafChains(g, { leafX: tree.slotX(0), leafY: tree.leafY, l, w, compact });
+  return { svg: g.toString(), width: W, height: leaf.bottom };
+}

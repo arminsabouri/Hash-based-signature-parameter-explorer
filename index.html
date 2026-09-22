@@ -284,8 +284,7 @@
         <div class="visualization" x-data="xmssTree">
           <h3>Visualization</h3>
 
-          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
-               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+          <div data-template="tree-diagram"></div>
 
           <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
             Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
@@ -313,8 +312,7 @@
         <div class="visualization" x-data="xmssMtTree">
           <h3>Visualization</h3>
 
-          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
-               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+          <div data-template="tree-diagram"></div>
 
           <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
             Each inner node is \(\mathrm{Th}\) of its two children. Layers are numbered from the bottom, and the
@@ -344,8 +342,7 @@
         <div class="visualization" x-data="fxmssTree">
           <h3>Visualization</h3>
 
-          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
-               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+          <div data-template="tree-diagram"></div>
 
           <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
             Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
@@ -373,8 +370,7 @@
         <div class="visualization" x-data="forsForest">
           <h3>Visualization</h3>
 
-          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
-               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+          <div data-template="tree-diagram"></div>
 
           <p class="hint">Each tree has \(2^a\) secret leaves; the filled square is the leaf a signature reveals.
             The verifier hashes it up its authentication path to the tree's root and compresses the \(k\) roots
@@ -440,6 +436,11 @@
     </template>
   </template>
 
+  <template id="tree-diagram">
+    <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
+         :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+  </template>
+
   <template id="results-panel">
     <h3>Results</h3>
     <template x-if="config.groups">
@@ -463,18 +464,20 @@
         </template>
         <dl>
           <template x-for="(row, r) in group.rows" :key="r">
-            <div class="result-row" x-show="!row.show || row.show(derived)" :class="(row.group ?? group.group) && 'grouped'"
-                 :style="(row.group ?? group.group) && `--group-color: ${config.groups[row.group ?? group.group]}`">
-              <dt><span x-katex="row.label"></span>
-                <template x-if="row.tooltip">
-                  <span>
-                    <button type="button" class="tooltip-icon" :aria-describedby="tooltipId('g' + g, 'r' + r)">i</button>
-                    <span class="tooltip" role="tooltip" :id="tooltipId('g' + g, 'r' + r)" x-katex="row.tooltip"></span>
-                  </span>
-                </template>
-              </dt>
-              <dd x-katex="row.value(derived)"></dd>
-            </div>
+            <template x-if="(!group.show || group.show(derived)) && (!row.show || row.show(derived))">
+              <div class="result-row" :class="(row.group ?? group.group) && 'grouped'"
+                   :style="(row.group ?? group.group) && `--group-color: ${config.groups[row.group ?? group.group]}`">
+                <dt><span x-katex="row.label"></span>
+                  <template x-if="row.tooltip">
+                    <span>
+                      <button type="button" class="tooltip-icon" :aria-describedby="tooltipId('g' + g, 'r' + r)">i</button>
+                      <span class="tooltip" role="tooltip" :id="tooltipId('g' + g, 'r' + r)" x-katex="row.tooltip"></span>
+                    </span>
+                  </template>
+                </dt>
+                <dd x-katex="row.value(derived)"></dd>
+              </div>
+            </template>
           </template>
         </dl>
       </div>

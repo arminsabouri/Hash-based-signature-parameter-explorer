@@ -1,6 +1,6 @@
 import * as lamport from '../primitives/lamport.js';
 import { bytes, num } from '../scheme.js';
-import { blockSpace, compressionsTooltip, oneTime, signatureBudget } from '../common-results.js';
+import { blockSpace, compressionsTooltip, oneTime, signatureBudget, withMidstate } from '../common-results.js';
 
 export default {
   id: 'lamport',
@@ -10,13 +10,10 @@ export default {
 
   derive(state) {
     const m = lamport.model(state);
-    // Each operation that hashes also computes the cached PK.seed midstate once.
-    return {
-      ...m,
-      keygenCompressions: m.keygen.compressions + 1,
-      signCompressions: m.sign.prf ? m.sign.compressions + 1 : 0,
-      verifyCompressions: m.verify.compressions + 1,
-    };
+    // Signing hashes nothing, and so skips the midstate, when secret values
+    // are stored rather than derived.
+    const c = withMidstate(m);
+    return { ...m, ...c, signCompressions: m.sign.prf ? c.signCompressions : 0 };
   },
 
   results: [

@@ -4,7 +4,8 @@ import { chainsOf } from '../primitives/wots-c.js';
 import { digitSumDistribution, digits, lengths } from '../primitives/wots-tw.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, compressionsTooltip, oneTime, signatureBudget, successProbability, wcSearch,
+  blockSpace, compressionsTooltip, counterExhaustion, oneTime, signatureBudget, successProbability, wcSearch,
+  withMidstate,
 } from '../common-results.js';
 import { chainCells } from '../draw.js';
 
@@ -35,14 +36,7 @@ export default {
 
   derive(state) {
     const m = state.plusC ? wotsC.model(state) : wotsTw.model(state);
-    // Each operation also computes the cached PK.seed midstate once.
-    return {
-      ...m,
-      plusC: state.plusC,
-      keygenCompressions: m.keygen.compressions + 1,
-      signCompressions: m.sign.compressions + 1,
-      verifyCompressions: m.verify.compressions + 1,
-    };
+    return { ...m, plusC: state.plusC, ...withMidstate(m) };
   },
 
   results: [
@@ -79,13 +73,7 @@ export default {
       rows: [
         successProbability,
         wcSearch,
-        {
-          label: 'Counter exhaustion probability',
-          tooltip: 'Probability that none of the \\(2^r\\) counter values meets the conditions, \\((1 - p_\\nu)^{2^r}\\).',
-          value: (d) => (d.exhaustLog2 > -10
-            ? (2 ** d.exhaustLog2).toFixed(4)
-            : `\\(2^{${Math.round(d.exhaustLog2).toLocaleString()}}\\)`),
-        },
+        counterExhaustion('Probability that none of the \\(2^r\\) counter values meets the conditions, \\((1 - p_\\nu)^{2^r}\\).'),
       ],
     },
     {

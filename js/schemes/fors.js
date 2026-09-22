@@ -2,8 +2,10 @@ import * as fors from '../primitives/fors.js';
 import { forgeryLog2 } from '../primitives/fors.js';
 import * as messageHash from '../primitives/message-hash.js';
 import { approx, bytes, num } from '../scheme.js';
-import { blockSpace, signatureBudget } from '../common-results.js';
-import { svg } from '../draw.js';
+import {
+  blockSpace, counterExhaustion, messageCompressionsTooltip, messageHashNote, signatureBudget, withMidstate,
+} from '../common-results.js';
+import { bracket, svg } from '../draw.js';
 
 // FORS and FORS+C as a standalone few-time signature, with FIPS 205 message
 // hashing. Default k and a are those of SLH-DSA-SHA2-128s.
@@ -25,27 +27,28 @@ export default {
   ],
 
   derive(state) {
-    const msg0 = messageHash.model(state, { digestBits: state.k * state.a, counterBits: state.plusC ? state.r : 0 });
-    const m = fors.model(state, msg0.mgf1);
+    const msg = messageHash.model(state, { digestBits: state.k * state.a, counterBits: state.plusC ? state.r : 0 });
+    const m = fors.model(state, msg.mgf1);
     const sizes = {
       sk: 4 * state.n, // SK.seed, SK.prf, PK.seed, and root
       pk: 2 * state.n, // PK.seed and root
-      R: msg0.sizes.R,
+      R: msg.sizes.R,
       fors: m.sizes.sig,
     };
     sizes.sig = sizes.R + sizes.fors;
     const q = 2 ** state.logq;
 
-    // Each operation also computes the cached PK.seed midstate once.
     return {
       ...m,
       plusC: state.plusC, k: state.k, q,
       sizes,
       forgeryLog2: forgeryLog2(state, q),
-      keygenCompressions: m.keygen.compressions + 1,
-      signCompressions: msg0.sign.compressions + m.sign.compressions + 1,
-      signCachedCompressions: msg0.sign.compressions + m.signCached.compressions + 1,
-      verifyCompressions: msg0.verify.compressions + m.verify.compressions + 1,
+      ...withMidstate({
+        keygen: m.keygen,
+        sign: { compressions: msg.sign.compressions + m.sign.compressions },
+        signCached: { compressions: msg.sign.compressions + m.signCached.compressions },
+        verify: { compressions: msg.verify.compressions + m.verify.compressions },
+      }),
     };
   },
 
@@ -83,18 +86,12 @@ export default {
       rows: [
         { label: 'Success probability per trial', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
         { label: 'WC search', value: (d) => approx(d.wcSearch) },
-        {
-          label: 'Counter exhaustion probability',
-          tooltip: 'Probability that none of the \\(2^r\\) counter values meets the condition, \\((1 - 2^{-a})^{2^r}\\).',
-          value: (d) => (d.exhaustLog2 > -10
-            ? (2 ** d.exhaustLog2).toFixed(4)
-            : `\\(2^{${Math.round(d.exhaustLog2).toLocaleString()}}\\)`),
-        },
+        counterExhaustion('Probability that none of the \\(2^r\\) counter values meets the condition, \\((1 - 2^{-a})^{2^r}\\).'),
       ],
     },
     {
       heading: 'Hash calls',
-      tooltip: 'Key generation builds every tree and hashes the \\(k\\) roots into the public key. Without a cache, signing rebuilds the trees to get the authentication paths. With the trees cached, signing derives the \\(k\\) revealed leaves. Signing also computes \\(\\mathbf{PRF}_{\\mathbf{msg}}\\) and \\(\\mathbf{H}_{\\mathbf{msg}}\\); verification computes \\(\\mathbf{H}_{\\mathbf{msg}}\\).',
+      tooltip: `Key generation builds every tree and hashes the \\(k\\) roots into the public key. Without a cache, signing rebuilds the trees to get the authentication paths. With the trees cached, signing derives the \\(k\\) revealed leaves. ${messageHashNote}`,
       rows: [
         { label: 'Key generation', value: (d) => `${approx(d.keygen.prf)} \\(\\mathbf{PRF}\\) + ${approx(d.keygen.th)} \\(\\mathrm{Th}\\)` },
         { label: 'Signing (no cache)', value: (d) => `${approx(d.sign.prf)} \\(\\mathbf{PRF}\\) + ${approx(d.sign.th)} \\(\\mathrm{Th}\\)` },
@@ -104,7 +101,7 @@ export default {
     },
     {
       heading: 'SHA-256 compressions',
-      tooltip: 'An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. \\(\\mathrm{Th}\\) and \\(\\mathbf{PRF}\\) follow FIPS 205 with a cached \\(\\mathrm{PK.seed}\\) block, adding one compression per operation. \\(\\mathbf{PRF}_{\\mathbf{msg}}\\) and \\(\\mathbf{H}_{\\mathbf{msg}}\\) follow FIPS 205 for a 32-byte message and a \\(ka\\)-bit digest. FORS+C signing includes the WC search.',
+      tooltip: `${messageCompressionsTooltip(' and a \\(ka\\)-bit digest')} FORS+C signing includes the WC search.`,
       rows: [
         { label: 'Key generation', value: (d) => approx(d.keygenCompressions) },
         { label: 'Signing (no cache)', value: (d) => approx(d.signCompressions) },
@@ -168,10 +165,7 @@ function forestSvg(k, a, plusC) {
 
   // Height and leaf count annotations.
   const bx = W - 100;
-  g.line(bx, rootY, bx, baseY, 'bracket');
-  g.line(bx - 4, rootY, bx, rootY, 'bracket');
-  g.line(bx - 4, baseY, bx, baseY, 'bracket');
-  g.text(bx + 8, (rootY + baseY) / 2 + 4, `a = ${a}`, 'start');
+  bracket(g, bx, rootY, baseY, [`a = ${a}`]);
   g.text(bx + 8, baseY + 16, `${(2 ** a).toLocaleString()} leaves`, 'start', 'label ots-label');
   g.text(bx + 8, baseY + 30, 'per tree', 'start', 'label ots-label');
   g.text(pkX, baseY + 70, `k = ${k} trees`, 'middle');
