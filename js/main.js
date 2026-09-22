@@ -1,13 +1,12 @@
 import { scheme } from './scheme.js';
 import lamport, { lamportGrid } from './schemes/lamport.js';
-import wots, { wotsChains } from './schemes/wots.js';
-import wotsC, { wotsCChains } from './schemes/wots-c.js';
+import wots, { wotsCChains, wotsChains } from './schemes/wots.js';
 import xmss, { xmssTree } from './schemes/xmss.js';
 import xmssMt, { xmssMtTree } from './schemes/xmss-mt.js';
 import fxmss, { fxmssTree } from './schemes/fxmss.js';
 import fors, { forsForest } from './schemes/fors.js';
 
-const schemes = { lamport, wots, 'wots-c': wotsC, xmss, 'xmss-mt': xmssMt, fxmss, fors };
+const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.

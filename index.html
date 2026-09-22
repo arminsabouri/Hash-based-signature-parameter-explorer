@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt', 'fxmss', 'fors'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -59,9 +59,7 @@
       <button type="button" role="tab" :aria-selected="selected === 'lamport'"
               @click="selected = 'lamport'; history.replaceState(null, '', '#lamport')">Lamport OTS</button>
       <button type="button" role="tab" :aria-selected="selected === 'wots'"
-              @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW</button>
-      <button type="button" role="tab" :aria-selected="selected === 'wots-c'"
-              @click="selected = 'wots-c'; history.replaceState(null, '', '#wots-c')">WOTS+C</button>
+              @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW / WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss'"
               @click="selected = 'xmss'; history.replaceState(null, '', '#xmss')">XMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
@@ -73,7 +71,7 @@
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
-      <h2 x-html="config.title"></h2>
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
@@ -133,8 +131,8 @@
     </section>
 
     <section class="scheme" x-data="scheme('wots')" x-show="selected === 'wots'">
-      <h2 x-html="config.title"></h2>
-      <p class="scheme-intro">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro" x-show="!state.plusC">
         WOTS-TW signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
         <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
@@ -143,10 +141,19 @@
         than in the signed one, so a forgery needs a chain value earlier than the one revealed.
       </p>
 
+      <p class="scheme-intro" x-show="state.plusC">
+        WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
+        digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
+        digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
+        \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
+        values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
+        value earlier than the one revealed.
+      </p>
+
       <div class="explorer">
         <aside class="parameters" data-template="parameters-panel"></aside>
 
-        <div class="visualization" x-data="wotsChains">
+        <div class="visualization" x-data="wotsChains" x-show="!state.plusC">
           <h3>Visualization</h3>
 
           <div class="wots-chains">
@@ -200,25 +207,7 @@
             shaded values are computed by the signer, outlined values by the verifier.</p>
         </div>
 
-        <aside class="results" data-template="results-panel"></aside>
-      </div>
-    </section>
-
-    <section class="scheme" x-data="scheme('wots-c')" x-show="selected === 'wots-c'">
-      <h2 x-html="config.title"></h2>
-      <p class="scheme-intro">
-        WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
-        digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
-        digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
-        \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
-        values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
-        value earlier than the one revealed.
-      </p>
-
-      <div class="explorer">
-        <aside class="parameters" data-template="parameters-panel"></aside>
-
-        <div class="visualization" x-data="wotsCChains">
+        <div class="visualization" x-data="wotsCChains" x-show="state.plusC">
           <h3>Visualization</h3>
 
           <div class="wots-chains">
@@ -276,8 +265,9 @@
       </div>
     </section>
 
+
     <section class="scheme" x-data="scheme('xmss')" x-show="selected === 'xmss'">
-      <h2 x-html="config.title"></h2>
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         XMSS authenticates <strong>\(\boldsymbol{2^h}\)</strong> WOTS+C public keys as the leaves of a Merkle
         tree of height \(h\), and the root is the public key. To sign, the signer takes the next unused leaf
@@ -306,7 +296,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('xmss-mt')" x-show="selected === 'xmss-mt'">
-      <h2 x-html="config.title"></h2>
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         XMSS<sup>MT</sup> stacks <strong>\(\boldsymbol{d}\)</strong> layers of XMSS trees of height \(h'\) into a
         hypertree of total height <strong>\(\boldsymbol{h = d \cdot h'}\)</strong>. The root of the top-layer tree is
@@ -336,7 +326,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('fxmss')" x-show="selected === 'fxmss'">
-      <h2 x-html="config.title"></h2>
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         FXMSS is the stateful component of SHRINCS: a single Merkle tree of WOTS+C leaves whose structure the
         signer chooses at key generation, as a <strong>\(\boldsymbol{\mathbf{shape}}\)</strong> and a
@@ -366,7 +356,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('fors')" x-show="selected === 'fors'">
-      <h2 x-html="config.title"></h2>
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         FORS (Forest of Random Subsets) is a few-time signature: <strong>\(\boldsymbol{k}\)</strong> Merkle trees of
         height <strong>\(\boldsymbol{a}\)</strong> whose leaves are secret values, with the public key a
