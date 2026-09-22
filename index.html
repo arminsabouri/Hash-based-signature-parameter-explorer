@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -64,10 +64,12 @@
               @click="selected = 'wots-c'; history.replaceState(null, '', '#wots-c')">WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss'"
               @click="selected = 'xmss'; history.replaceState(null, '', '#xmss')">XMSS + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
+              @click="selected = 'xmss-mt'; history.replaceState(null, '', '#xmss-mt')">XMSS<sup>MT</sup> + WOTS+C</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
-      <h2 x-text="config.title"></h2>
+      <h2 x-html="config.title"></h2>
       <p class="scheme-intro">
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
@@ -127,7 +129,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('wots')" x-show="selected === 'wots'">
-      <h2 x-text="config.title"></h2>
+      <h2 x-html="config.title"></h2>
       <p class="scheme-intro">
         WOTS-TW signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
@@ -199,7 +201,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('wots-c')" x-show="selected === 'wots-c'">
-      <h2 x-text="config.title"></h2>
+      <h2 x-html="config.title"></h2>
       <p class="scheme-intro">
         WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
         digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
@@ -271,7 +273,7 @@
     </section>
 
     <section class="scheme" x-data="scheme('xmss')" x-show="selected === 'xmss'">
-      <h2 x-text="config.title"></h2>
+      <h2 x-html="config.title"></h2>
       <p class="scheme-intro">
         XMSS authenticates <strong>\(\boldsymbol{2^h}\)</strong> WOTS+C public keys as the leaves of a Merkle
         tree of height \(h\), and the root is the public key. To sign, the signer takes the next unused leaf
@@ -293,6 +295,35 @@
 
           <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
             Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('xmss-mt')" x-show="selected === 'xmss-mt'">
+      <h2 x-html="config.title"></h2>
+      <p class="scheme-intro">
+        XMSS<sup>MT</sup> stacks <strong>\(\boldsymbol{d}\)</strong> layers of XMSS trees of height \(h'\) into a
+        hypertree of total height <strong>\(\boldsymbol{h = d \cdot h'}\)</strong>. The root of the top-layer tree is
+        the public key. The root of each lower tree is signed by a WOTS+C key from the tree above it, and a
+        bottom-layer WOTS+C key signs the randomized message digest. The signature holds the leaf index \(i\),
+        the randomness \(R\), and for each layer <strong>\(\boldsymbol{(\sigma_{\mathbf{OTS}}, \mathbf{AuthPath})}\)</strong>.
+        The verifier recomputes each layer's root from the one below and compares the top-layer root with the
+        public key. Each bottom-layer leaf signs once, so the signer keeps state: the index of the next unused leaf.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="xmssMtTree">
+          <h3>Visualization</h3>
+
+          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
+               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+
+          <p class="hint">Each leaf is a WOTS+C public key and each inner node is \(\mathrm{Th}\) of its two children.
+            Layers are numbered from the bottom, and the top-layer root is the public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
