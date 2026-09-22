@@ -36,3 +36,29 @@ export function model({ h, n }, leaf) {
     verify: { th: h, compressions: h * nodeCall },
   };
 }
+
+// Unbalanced, left-leaning tree of the given depth (UXMSS in SHRINCS): the
+// right child at each depth from 1 to depth is a leaf, and the left child at
+// the deepest level is one too, so depth + 1 leaves and depth inner nodes.
+// Signature q uses a leaf at depth min(q, depth). Sizes and verification are
+// for the deepest leaf.
+export function unbalancedModel({ depth, n }, leaf) {
+  const leaves = depth + 1;
+  const nodes = depth;
+  const nodeCall = tweakedCompressions((2 * n) / 8);
+  return {
+    leaves,
+    leafDepth: (q) => Math.min(q, depth),
+    sizes: {
+      root: n,
+      authPath: depth * n,
+      cache: (leaves + nodes) * n,
+    },
+    keygen: {
+      prf: leaves * leaf.keygen.prf,
+      th: leaves * leaf.keygen.th + nodes,
+      compressions: leaves * leaf.keygen.compressions + nodes * nodeCall,
+    },
+    verify: { th: depth, compressions: depth * nodeCall },
+  };
+}

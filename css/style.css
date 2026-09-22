@@ -99,6 +99,15 @@ main:has(.scheme) { max-width: 80rem; }
 .parameters label { display: block; margin-bottom: 1rem; }
 .parameters label > span { display: block; font-size: 0.9rem; }
 .parameters input[type="range"] { width: 100%; accent-color: var(--c-0a9396); }
+.parameters select {
+  margin-top: 0.25rem;
+  font: inherit;
+  color: var(--color);
+  background: var(--background-color);
+  border: 1px solid var(--group-color, var(--border-color));
+  border-radius: 3px;
+  padding: 0.15rem 0.3rem;
+}
 .parameters .toggle { display: flex; gap: 0.5rem; align-items: flex-start; }
 .parameters .toggle input { accent-color: var(--c-0a9396); margin-top: 0.3rem; }
 

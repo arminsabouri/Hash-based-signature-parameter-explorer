@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt', 'fxmss'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -66,6 +66,8 @@
               @click="selected = 'xmss'; history.replaceState(null, '', '#xmss')">XMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
               @click="selected = 'xmss-mt'; history.replaceState(null, '', '#xmss-mt')">XMSS<sup>MT</sup> + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'fxmss'"
+              @click="selected = 'fxmss'; history.replaceState(null, '', '#fxmss')">FXMSS + WOTS+C</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -331,6 +333,36 @@
       </div>
     </section>
 
+    <section class="scheme" x-data="scheme('fxmss')" x-show="selected === 'fxmss'">
+      <h2 x-html="config.title"></h2>
+      <p class="scheme-intro">
+        FXMSS is the stateful component of SHRINCS: a single Merkle tree of WOTS+C leaves whose structure the
+        signer chooses at key generation, as a <strong>\(\boldsymbol{\mathbf{shape}}\)</strong> and a
+        <strong>\(\boldsymbol{\mathbf{depth}}\)</strong>. The verifier recomputes the root from the WOTS+C
+        signature, the leaf position, and the authentication path, so it accepts any structure. In UXMSS the
+        leaf for signature \(q\) sits at depth \(\min(q, \mathrm{depth})\), giving
+        <strong>\(\boldsymbol{\mathrm{depth} + 1}\)</strong> signatures whose authentication paths grow by one
+        node each. In BXMSS all <strong>\(\boldsymbol{2^{\mathrm{depth}}}\)</strong> leaves sit at the full depth.
+        Each leaf signs once, so the signer keeps a state counter.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="fxmssTree">
+          <h3>Visualization</h3>
+
+          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
+               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+
+          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
+            Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
     <footer class="site-footer">
       <p>
         Inspired by the
@@ -362,6 +394,16 @@
                 <template x-for="t in p.ticks" :key="t"><option :value="t"></option></template>
               </datalist>
             </template>
+          </label>
+        </template>
+        <template x-if="p.type === 'select'">
+          <label>
+            <span><span x-katex="p.label"></span>
+              <button type="button" class="tooltip-icon" :aria-describedby="tooltipId(p.key)">i</button></span>
+            <span class="tooltip" role="tooltip" :id="tooltipId(p.key)" x-katex="p.tooltip"></span>
+            <select x-model="state[p.key]">
+              <template x-for="o in p.options" :key="o"><option :value="o" x-text="o" :selected="o === state[p.key]"></option></template>
+            </select>
           </label>
         </template>
         <template x-if="p.type === 'checkbox'">
