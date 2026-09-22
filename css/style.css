@@ -393,3 +393,12 @@ button.wots-digit { cursor: pointer; }
   height: 1em;
   background: var(--group-color);
 }
+
+.site-footer {
+  margin-top: 4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 0.8rem;
+}
+.site-footer p { margin: 0.25rem 0; }
