@@ -364,6 +364,8 @@ button.wots-digit { cursor: pointer; }
 .xmss-tree .ots-node { fill: var(--c-ca6702); }
 .xmss-tree .ots-edge { stroke: var(--c-ca6702); stroke-width: 1.5; }
 .xmss-tree .ots-edge.faint { opacity: 0.5; stroke-width: 1; }
+.xmss-tree .edge.faint { opacity: 0.5; stroke-width: 1; }
+.xmss-tree .edge.dashed { stroke-dasharray: 4 3; }
 .xmss-tree .chain-value { fill: none; stroke: var(--c-ca6702); stroke-width: 1; }
 .xmss-tree .chain-end { fill: var(--c-ca6702); }
 .xmss-tree .label { fill: currentColor; font-size: 11px; font-family: ui-monospace, monospace; }

@@ -5,8 +5,9 @@ import wotsC, { wotsCChains } from './schemes/wots-c.js';
 import xmss, { xmssTree } from './schemes/xmss.js';
 import xmssMt, { xmssMtTree } from './schemes/xmss-mt.js';
 import fxmss, { fxmssTree } from './schemes/fxmss.js';
+import fors, { forsForest } from './schemes/fors.js';
 
-const schemes = { lamport, wots, 'wots-c': wotsC, xmss, 'xmss-mt': xmssMt, fxmss };
+const schemes = { lamport, wots, 'wots-c': wotsC, xmss, 'xmss-mt': xmssMt, fxmss, fors };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.
@@ -31,4 +32,5 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('xmssTree', xmssTree);
   Alpine.data('xmssMtTree', xmssMtTree);
   Alpine.data('fxmssTree', fxmssTree);
+  Alpine.data('forsForest', forsForest);
 });

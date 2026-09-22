@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt', 'fxmss'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'wots-c', 'xmss', 'xmss-mt', 'fxmss', 'fors'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -68,6 +68,8 @@
               @click="selected = 'xmss-mt'; history.replaceState(null, '', '#xmss-mt')">XMSS<sup>MT</sup> + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fxmss'"
               @click="selected = 'fxmss'; history.replaceState(null, '', '#fxmss')">FXMSS + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'fors'"
+              @click="selected = 'fors'; history.replaceState(null, '', '#fors')">FORS</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -363,6 +365,36 @@
       </div>
     </section>
 
+    <section class="scheme" x-data="scheme('fors')" x-show="selected === 'fors'">
+      <h2 x-html="config.title"></h2>
+      <p class="scheme-intro">
+        FORS (Forest of Random Subsets) is a few-time signature: <strong>\(\boldsymbol{k}\)</strong> Merkle trees of
+        height <strong>\(\boldsymbol{a}\)</strong> whose leaves are secret values, with the public key a
+        \(\mathrm{Th}\) of the \(k\) roots. The randomized message digest is split into \(k\) indices of \(a\) bits,
+        and the signature reveals the indexed leaf of each tree with its authentication path. Each signature
+        reveals \(k\) more leaves, so the probability of a forgery grows with the number of signatures
+        <strong>\(\boldsymbol{q}\)</strong>. FORS+C grinds a counter until the last tree's index is 0, which removes
+        that tree's authentication path from the signature.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="forsForest">
+          <h3>Visualization</h3>
+
+          <svg class="xmss-tree" :view-box.camel="`0 0 ${drawing.width} ${drawing.height}`"
+               :style="`max-width: ${drawing.width}px`" x-html="drawing.svg"></svg>
+
+          <p class="hint">Each tree has \(2^a\) secret leaves; the filled square is the leaf a signature reveals.
+            The verifier hashes it up its authentication path to the tree's root and compresses the \(k\) roots
+            into the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
     <footer class="site-footer">
       <p>
         Inspired by the
@@ -377,7 +409,7 @@
   <template id="parameters-panel">
     <h3>Parameters</h3>
     <template x-for="(p, i) in config.parameters" :key="p.key">
-      <div :class="p.group && { grouped: true, 'group-start': p.group !== config.parameters[i - 1]?.group }"
+      <div x-show="!p.show || p.show(state)" :class="p.group && { grouped: true, 'group-start': p.group !== config.parameters[i - 1]?.group }"
            :style="p.group && `--group-color: ${config.groups[p.group]}`">
         <template x-if="p.group && p.group !== config.parameters[i - 1]?.group">
           <h4 class="parameter-group" x-text="p.group"></h4>
@@ -428,7 +460,7 @@
       </ul>
     </template>
     <template x-for="(group, g) in config.results" :key="g">
-      <div>
+      <div x-show="!group.show || group.show(derived)">
         <template x-if="group.heading">
           <h4><span x-text="group.heading"></span>
             <template x-if="group.tooltip">
@@ -441,7 +473,7 @@
         </template>
         <dl>
           <template x-for="(row, r) in group.rows" :key="r">
-            <div class="result-row" :class="(row.group ?? group.group) && 'grouped'"
+            <div class="result-row" x-show="!row.show || row.show(derived)" :class="(row.group ?? group.group) && 'grouped'"
                  :style="(row.group ?? group.group) && `--group-color: ${config.groups[row.group ?? group.group]}`">
               <dt><span x-katex="row.label"></span>
                 <template x-if="row.tooltip">
