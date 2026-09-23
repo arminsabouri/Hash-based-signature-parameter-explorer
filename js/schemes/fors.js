@@ -3,9 +3,10 @@ import { forgeryLog2 } from '../primitives/fors.js';
 import * as messageHash from '../primitives/message-hash.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, counterExhaustion, messageCompressionsTooltip, messageHashNote, signatureBudget, withMidstate,
+  blockSpace, counterExhaustion, messageCompressionsTooltip, messageHashNote, probability, signatureBudget,
+  withMidstate,
 } from '../common-results.js';
-import { bracket, svg } from '../draw.js';
+import { drawForest, svg } from '../draw.js';
 
 // FORS and FORS+C as a standalone few-time signature, with FIPS 205 message
 // hashing. Default k and a are those of SLH-DSA-SHA2-128s.
@@ -84,7 +85,7 @@ export default {
       show: (d) => d.plusC,
       tooltip: 'Each trial recomputes the MGF1 part of \\(\\mathbf{H}_{\\mathbf{msg}}\\) with the counter and succeeds when the last \\(a\\) digest bits are zero, with probability \\(2^{-a}\\). WC search is the number of trials that suffices except with probability \\(2^{-30}\\).',
       rows: [
-        { label: 'Success probability per trial', value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`) },
+        { label: 'Success probability per trial', value: (d) => probability(d.p) },
         { label: 'WC search', value: (d) => approx(d.wcSearch) },
         counterExhaustion('Probability that none of the \\(2^r\\) counter values meets the condition, \\((1 - 2^{-a})^{2^r}\\).'),
       ],
@@ -99,6 +100,8 @@ export default {
         { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
       ],
     },
+    // The SHA-256 compressions group, hidden for now.
+    /*
     {
       heading: 'SHA-256 compressions',
       tooltip: `${messageCompressionsTooltip(' and a \\(ka\\)-bit digest')} FORS+C signing includes the WC search.`,
@@ -109,6 +112,7 @@ export default {
         { label: 'Verification', value: (d) => num(d.verifyCompressions) },
       ],
     },
+    */
     signatureBudget(
       {
         label: 'Secret leaves revealed per signature',
@@ -124,53 +128,16 @@ export default {
   ],
 };
 
-// Structure diagram: k trees of height a, each drawn as an outline with its
-// root on top and its leaf row below, with one revealed leaf. The roots feed
-// one Th into the public key. Trees are elided when k > 5. For FORS+C the
-// last tree is dashed and opens its first leaf.
+// Structure diagram: the k trees with their roots compressed into the
+// public key.
 function forestSvg(k, a, plusC) {
   const W = 560;
   const g = svg();
-  const slots = k <= 5 ? [...Array(k).keys()] : [0, 1, 2, null, k - 1];
-  const left = 40, right = W - 120;
-  const slotW = (right - left) / slots.length;
-  const pkY = 30, rootY = 90, baseY = 170, size = 10;
-  const pkX = (left + right) / 2;
-
-  g.text(pkX, pkY - 12, `FORS public key = Th(root₁, …, rootₖ)`);
-  g.circle(pkX, pkY, 7, 'tree-node');
-
-  slots.forEach((j, s) => {
-    const cx = left + (s + 0.5) * slotW;
-    const hw = slotW / 2 - 8;
-    if (j === null) {
-      g.text(cx, (rootY + baseY) / 2, '…');
-      return;
-    }
-    const last = j === k - 1;
-    const dashed = plusC && last;
-    const cls = dashed ? 'edge dashed' : 'edge';
-    g.line(pkX, pkY + 7, cx, rootY - 7, 'edge faint');
-    g.line(cx, rootY, cx - hw, baseY, cls);
-    g.line(cx, rootY, cx + hw, baseY, cls);
-    g.line(cx - hw, baseY, cx + hw, baseY, cls);
-    g.circle(cx, rootY, 7, 'tree-node');
-    // One revealed leaf per tree: the first leaf for the FORS+C last tree,
-    // otherwise an arbitrary position.
-    const leafX = dashed ? cx - hw + size / 2 : cx - hw + (hw * 2) * ((j * 0.37 + 0.3) % 1);
-    g.rect(leafX - size / 2, baseY + 6, size, size, 'ots-node');
-    g.text(cx, baseY + 34, `tree ${j + 1}`);
-    if (dashed) g.text(cx, baseY + 48, 'leaf 0', 'middle', 'label ots-label');
+  const forest = drawForest(g, {
+    k, a, plusC, left: 40, right: W - 120, top: 30, bx: W - 100,
+    pkLabel: 'FORS public key = Th(root\u2081, \u2026, root\u2096)',
   });
-
-  // Height and leaf count annotations.
-  const bx = W - 100;
-  bracket(g, bx, rootY, baseY, [`a = ${a}`]);
-  g.text(bx + 8, baseY + 16, `${(2 ** a).toLocaleString()} leaves`, 'start', 'label ots-label');
-  g.text(bx + 8, baseY + 30, 'per tree', 'start', 'label ots-label');
-  g.text(pkX, baseY + 70, `k = ${k} trees`, 'middle');
-
-  return { svg: g.toString(), width: W, height: baseY + 80 };
+  return { svg: g.toString(), width: W, height: forest.bottom };
 }
 
 // Visualization state, nested inside the scheme component.

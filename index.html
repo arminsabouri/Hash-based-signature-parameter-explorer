@@ -25,7 +25,7 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{ selected: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'sphincs'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -68,6 +68,8 @@
               @click="selected = 'fxmss'; history.replaceState(null, '', '#fxmss')">FXMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="selected = 'fors'; history.replaceState(null, '', '#fors')">FORS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'sphincs'"
+              @click="selected = 'sphincs'; history.replaceState(null, '', '#sphincs')">SPHINCS+</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -375,6 +377,36 @@
           <p class="hint">Each tree has \(2^a\) secret leaves; the filled square is the leaf a signature reveals.
             The verifier hashes it up its authentication path to the tree's root and compresses the \(k\) roots
             into the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('sphincs')" x-show="selected === 'sphincs'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        SPHINCS+, standardized as SLH-DSA in FIPS 205, places a FORS key pair at every bottom-layer leaf of an
+        XMSS<sup>MT</sup> hypertree. Signing hashes the message with randomness \(R\) into a digest that is split
+        into the <strong>\(\boldsymbol{k}\)</strong> FORS indices, a tree index, and a leaf index. The selected
+        leaf's FORS key signs the digest, the OTS key of that leaf signs the FORS public key, and each layer above
+        signs the root below it, as in XMSS<sup>MT</sup>. The signature is
+        <strong>\(\boldsymbol{(R, \sigma_{\mathbf{FORS}}, \sigma_{\mathbf{HT}})}\)</strong>. Because the digest
+        picks the leaf, the signer keeps no state, and the same FORS key pair can be selected more than once.
+        The OTS is WOTS-TW or WOTS+C, and the few-time signature is FORS or FORS+C.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="sphincsDiagram">
+          <h3>Visualization</h3>
+
+          <div data-template="tree-diagram"></div>
+
+          <p class="hint">Each hypertree leaf is an OTS public key, and each inner node is \(\mathrm{Th}\) of its
+            two children. Under the selected bottom-layer leaf sits its FORS key pair: \(k\) trees of
+            \(2^a\) secret leaves whose roots \(\mathrm{Th}\) compresses into the FORS public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>

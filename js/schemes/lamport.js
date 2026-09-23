@@ -37,6 +37,8 @@ export default {
         { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
       ],
     },
+    // The SHA-256 compressions group, hidden for now.
+    /*
     {
       heading: 'SHA-256 compressions',
       tooltip: compressionsTooltip,
@@ -46,6 +48,7 @@ export default {
         { label: 'Verification', value: (d) => num(d.verifyCompressions) },
       ],
     },
+    */
     signatureBudget(oneTime('Signing two different messages reveals both secret values at every bit where they differ.')),
     blockSpace,
   ],

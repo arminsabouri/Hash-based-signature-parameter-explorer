@@ -41,10 +41,16 @@ export function signatureBudget(...rows) {
 // One signature per key pair, for one-time signatures.
 export const oneTime = (tooltip) => ({ label: 'Signatures per key pair', tooltip, value: () => '1' });
 
+// Counter search formatting, shared by the schemes that grind a counter.
+export const probability = (p) => (p >= 1e-4 ? p.toFixed(4) : `\\(2^{${Math.log2(p).toFixed(1)}}\\)`);
+export const exhaustProbability = (log2) => (log2 > -10
+  ? (2 ** log2).toFixed(4)
+  : `\\(2^{${Math.round(log2).toLocaleString()}}\\)`);
+
 // WOTS+C counter search rows. Derived values carry `p` and `wcSearch`.
 export const successProbability = {
   label: 'Success probability per trial (\\(p_\\nu\\))',
-  value: (d) => (d.p >= 1e-4 ? d.p.toFixed(4) : `\\(2^{${Math.log2(d.p).toFixed(1)}}\\)`),
+  value: (d) => probability(d.p),
 };
 export const wcSearch = { label: 'WC search', value: (d) => approx(d.wcSearch) };
 
@@ -52,9 +58,7 @@ export const wcSearch = { label: 'WC search', value: (d) => approx(d.wcSearch) }
 export const counterExhaustion = (tooltip) => ({
   label: 'Counter exhaustion probability',
   tooltip,
-  value: (d) => (d.exhaustLog2 > -10
-    ? (2 ** d.exhaustLog2).toFixed(4)
-    : `\\(2^{${Math.round(d.exhaustLog2).toLocaleString()}}\\)`),
+  value: (d) => exhaustProbability(d.exhaustLog2),
 });
 
 // Schemes with a Merkle tree of WOTS+C leaves: the parameter and result groups,
@@ -97,6 +101,8 @@ export function treeCosts(hashTooltip, cached) {
         { label: 'Verification', value: (d) => `${num(d.calls.verify.th)} \\(\\mathrm{Th}\\)` },
       ],
     },
+    // The SHA-256 compressions group, hidden for now.
+    /*
     {
       heading: 'SHA-256 compressions',
       tooltip: messageCompressionsTooltip(),
@@ -107,6 +113,7 @@ export function treeCosts(hashTooltip, cached) {
         { label: 'Verification', value: (d) => num(d.verifyCompressions) },
       ],
     },
+    */
   ];
 }
 

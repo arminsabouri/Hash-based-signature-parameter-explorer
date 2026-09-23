@@ -5,7 +5,7 @@ import { bytes } from '../scheme.js';
 import {
   OTS, TREE, blockSpace, otsSearch, treeBudget, treeCosts, treeGroups, treeKeys, withMidstate,
 } from '../common-results.js';
-import { annotateTree, drawLeafChains, drawTree, svg } from '../draw.js';
+import { drawHypertree, drawLeafChains, svg } from '../draw.js';
 
 // XMSS^MT with WOTS+C leaves, Section 8 of Kudinov and Nick, "Hash-based
 // Signature Schemes for Bitcoin". A hypertree of d layers of XMSS trees of
@@ -103,49 +103,13 @@ export default {
   ],
 };
 
-// Structure diagram: the d layers stacked with the top layer first. A WOTS+C
-// leaf of each tree signs the root of the tree below it, and a bottom-layer
-// leaf, opened up into its chains, signs the message digest. Layers between
-// the top and bottom are elided when d > 3.
+// Structure diagram: the d layers of the hypertree, with a bottom-layer leaf
+// opened up into its chains to sign the message digest.
 function hypertreeSvg(hp, d, l, w) {
   const W = 560;
-  const left = 90, right = W - 130, bx = W - 112;
   const g = svg();
-  const layers = d <= 3 ? [...Array(d).keys()].reverse() : [d - 1, null, 0];
-  const gap = 56;
-  let top = 30;
-  let from = null; // leaf position of the layer above
-
-  const connect = (x, y) => {
-    g.line(from.x, from.y + 7, x, y, 'ots-edge');
-  };
-
-  g.text((left + right) / 2, top - 14, 'Public key (root)');
-  for (const layer of layers) {
-    if (layer === null) {
-      const y = top + 8;
-      connect((left + right) / 2, y - 12);
-      g.text((left + right) / 2, y + 4, `⋮  layers ${d - 2} to 1`);
-      from = { x: (left + right) / 2, y: y + 6 };
-      top += gap;
-      continue;
-    }
-    if (from) {
-      connect((left + right) / 2, top - 8);
-      g.text((left + right) / 2 + 14, top - gap / 2 + 4, 'WOTS+C key signs this root', 'start', 'label ots-label');
-    }
-    const tree = drawTree(g, { h: hp, left, right, top, level: 30 });
-    g.text(left - 16, (tree.rootY + tree.leafY) / 2 + 4, `layer ${layer}`, 'end');
-
-    annotateTree(g, tree, bx, [`h' = ${hp}`]);
-
-    from = { x: tree.slotX(0), y: tree.leafY };
-    top = tree.leafY + gap;
-  }
-
-  // A bottom-layer leaf opened up into its chains. It signs the message digest.
+  const from = drawHypertree(g, { hp, d, left: 90, right: W - 130, bx: W - 112, top: 30, otsLabel: 'WOTS+C' });
   const leaf = drawLeafChains(g, { leafX: from.x, leafY: from.y, l, w, notes: ['signs the message digest'], compact: true });
-
   return { svg: g.toString(), width: W, height: leaf.bottom };
 }
 

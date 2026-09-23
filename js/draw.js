@@ -162,3 +162,87 @@ export function balancedTreeSvg({ h, lines, l, w, compact = false }) {
   const leaf = drawLeafChains(g, { leafX: tree.slotX(0), leafY: tree.leafY, l, w, compact });
   return { svg: g.toString(), width: W, height: leaf.bottom };
 }
+
+// The d layers of a hypertree, top layer first, with the layers between the
+// top and bottom elided when d > 3. An OTS key of each tree signs the root of
+// the tree below it. Returns the position of the bottom-layer leaf.
+export function drawHypertree(g, { hp, d, left, right, bx, top, otsLabel }) {
+  const layers = d <= 3 ? [...Array(d).keys()].reverse() : [d - 1, null, 0];
+  const gap = 56;
+  let y = top;
+  let from = null; // leaf position of the layer above
+
+  const connect = (x, ty) => {
+    g.line(from.x, from.y + 7, x, ty, 'ots-edge');
+  };
+
+  g.text((left + right) / 2, y - 14, 'Public key (root)');
+  for (const layer of layers) {
+    if (layer === null) {
+      const ly = y + 8;
+      connect((left + right) / 2, ly - 12);
+      g.text((left + right) / 2, ly + 4, `⋮  layers ${d - 2} to 1`);
+      from = { x: (left + right) / 2, y: ly + 6 };
+      y += gap;
+      continue;
+    }
+    if (from) {
+      connect((left + right) / 2, y - 8);
+      g.text((left + right) / 2 + 14, y - gap / 2 + 4, `${otsLabel} key signs this root`, 'start', 'label ots-label');
+    }
+    const tree = drawTree(g, { h: hp, left, right, top: y, level: 30 });
+    g.text(left - 16, (tree.rootY + tree.leafY) / 2 + 4, `layer ${layer}`, 'end');
+
+    annotateTree(g, tree, bx, [`h' = ${hp}`]);
+
+    from = { x: tree.slotX(0), y: tree.leafY };
+    y = tree.leafY + gap;
+  }
+  return from;
+}
+
+// k FORS trees of height a as outlines, each with its root on top, its leaf
+// row below, and one revealed leaf. The roots feed one Th into the FORS
+// public key. Trees are elided when k > 5. With `plusC` the last tree is
+// dashed and opens its first leaf. An empty `pkLabel` leaves the public key
+// node unlabeled. Returns the public key node and the bottom.
+export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
+  const slots = k <= 5 ? [...Array(k).keys()] : [0, 1, 2, null, k - 1];
+  const slotW = (right - left) / slots.length;
+  const pkY = top, rootY = top + 60, baseY = top + 140, size = 10;
+  const pkX = (left + right) / 2;
+
+  if (pkLabel) g.text(pkX, pkY - 12, pkLabel);
+  g.circle(pkX, pkY, 7, 'tree-node');
+
+  slots.forEach((j, s) => {
+    const cx = left + (s + 0.5) * slotW;
+    const hw = slotW / 2 - 8;
+    if (j === null) {
+      g.text(cx, (rootY + baseY) / 2, '…');
+      return;
+    }
+    const last = j === k - 1;
+    const dashed = plusC && last;
+    const cls = dashed ? 'edge dashed' : 'edge';
+    g.line(pkX, pkY + 7, cx, rootY - 7, 'edge faint');
+    g.line(cx, rootY, cx - hw, baseY, cls);
+    g.line(cx, rootY, cx + hw, baseY, cls);
+    g.line(cx - hw, baseY, cx + hw, baseY, cls);
+    g.circle(cx, rootY, 7, 'tree-node');
+    // One revealed leaf per tree: the first leaf for the FORS+C last tree,
+    // otherwise an arbitrary position.
+    const leafX = dashed ? cx - hw + size / 2 : cx - hw + (hw * 2) * ((j * 0.37 + 0.3) % 1);
+    g.rect(leafX - size / 2, baseY + 6, size, size, 'ots-node');
+    g.text(cx, baseY + 34, `tree ${j + 1}`);
+    if (dashed) g.text(cx, baseY + 48, 'leaf 0', 'middle', 'label ots-label');
+  });
+
+  // Height and leaf count annotations.
+  bracket(g, bx, rootY, baseY, [`a = ${a}`]);
+  g.text(bx + 8, baseY + 16, `${(2 ** a).toLocaleString()} leaves`, 'start', 'label ots-label');
+  g.text(bx + 8, baseY + 30, 'per tree', 'start', 'label ots-label');
+  g.text(pkX, baseY + 70, `k = ${k} trees`, 'middle');
+
+  return { pkX, pkY, baseY, bottom: baseY + 80 };
+}

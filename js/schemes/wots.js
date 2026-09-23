@@ -96,6 +96,8 @@ export default {
         { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
       ],
     },
+    // The SHA-256 compressions group, hidden for now.
+    /*
     {
       heading: 'SHA-256 compressions',
       tooltip: compressionsTooltip,
@@ -107,6 +109,7 @@ export default {
         { label: 'Verification', show: plusC, value: (d) => num(d.verifyCompressions) },
       ],
     },
+    */
     signatureBudget(oneTime('Two signatures on different messages reveal, in each chain, the lower of the two positions. Any message (for WOTS+C, any digest) whose digits are all at or above those positions can then be signed.')),
     blockSpace,
   ],
