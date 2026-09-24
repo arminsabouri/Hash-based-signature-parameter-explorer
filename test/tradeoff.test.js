@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import sphincs, { axisSpans } from '../js/schemes/sphincs.js';
+import sphincs, { spans } from '../js/schemes/sphincs.js';
 import { initialState } from '../js/scheme.js';
 
 // The tradeoff diagram's axes are scaled against the extremes the parameter
@@ -22,7 +22,7 @@ const PINNED_SPANS = [
 ];
 
 test('the pinned axis spans match a fresh walk of the parameter corners', () => {
-  assert.deepEqual(axisSpans(sphincs), PINNED_SPANS);
+  assert.deepEqual(spans(), PINNED_SPANS);
 });
 
 test('the pinned spans are the ones the diagram actually draws against', () => {

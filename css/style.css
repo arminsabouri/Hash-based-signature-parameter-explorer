@@ -492,9 +492,10 @@ button.wots-digit { cursor: pointer; }
 .tradeoff .radar-grid { fill: none; stroke: var(--border-color); stroke-width: 1; opacity: 0.35; }
 .tradeoff .radar-spoke { stroke: var(--border-color); stroke-width: 1; opacity: 0.35; }
 .tradeoff .radar-shape {
-  fill: color-mix(in srgb, var(--c-ca6702) 30%, transparent);
-  stroke: var(--c-ca6702);
+  fill: color-mix(in srgb, var(--shape-color, var(--c-ca6702)) 26%, transparent);
+  stroke: var(--shape-color, var(--c-ca6702));
   stroke-width: 2;
 }
-.tradeoff .radar-point { fill: var(--c-ca6702); }
+.tradeoff .radar-point { fill: var(--shape-color, var(--c-ca6702)); }
+.tradeoff .radar-swatch { fill: var(--shape-color, var(--c-ca6702)); }
 .tradeoff .radar-label { fill: var(--color); font-size: 10px; opacity: 0.85; }

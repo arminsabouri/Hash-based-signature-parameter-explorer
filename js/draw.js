@@ -16,6 +16,9 @@ export function svg() {
     polygon(points, cls) {
       parts.push(`<polygon points="${points}" class="${cls}"/>`);
     },
+    raw(markup) {
+      parts.push(markup);
+    },
     rect(x, y, width, height, cls) {
       parts.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="2" class="${cls}"/>`);
     },
@@ -250,11 +253,14 @@ export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
   return { pkX, pkY, baseY, bottom: baseY + 80 };
 }
 
-// A tradeoff diagram: one spoke per axis, with `value` in [0, 1] plotted along
-// it. `label` is an array of lines placed outside the vertex. Rings are drawn
-// at each quarter. The first axis points up and the rest follow clockwise.
-export function tradeoffSvg(axes, { radius = 68, rings = 4 } = {}) {
-  const W = 340, H = 226;
+// A tradeoff diagram: one spoke per axis, with one shape per series drawn on
+// the same axes. Each shape carries `values` in [0, 1], one per axis, and an
+// optional name and colour; several named shapes get a legend underneath.
+// `label` on an axis is an array of lines placed outside the vertex. The first
+// axis points up and the rest follow clockwise.
+export function tradeoffSvg(axes, shapes, { radius = 68, rings = 4 } = {}) {
+  const named = shapes.filter((s) => s.name).length;
+  const W = 340, H = 226 + (named ? 18 : 0);
   const cx = W / 2, cy = 116;
   const g = svg();
   const angle = (i) => (-Math.PI / 2) + (i * 2 * Math.PI) / axes.length;
@@ -269,11 +275,15 @@ export function tradeoffSvg(axes, { radius = 68, rings = 4 } = {}) {
     g.line(cx, cy, x, y, 'radar-spoke');
   });
 
-  g.polygon(axes.map((a, i) => at(i, radius * a.value).join(',')).join(' '), 'radar-shape');
-  axes.forEach((a, i) => {
-    const [x, y] = at(i, radius * a.value);
-    g.circle(x, y, 3, 'radar-point');
-  });
+  for (const shape of shapes) {
+    const style = shape.color ? ` style="--shape-color: ${shape.color}"` : '';
+    g.raw(`<polygon points="${shape.values.map((v, i) => at(i, radius * v).join(',')).join(' ')}"`
+      + ` class="radar-shape"${style}/>`);
+    shape.values.forEach((v, i) => {
+      const [x, y] = at(i, radius * v);
+      g.raw(`<circle cx="${x}" cy="${y}" r="3" class="radar-point"${style}/>`);
+    });
+  }
 
   // Labels outside each vertex, anchored away from the centre.
   axes.forEach((a, i) => {
@@ -285,5 +295,17 @@ export function tradeoffSvg(axes, { radius = 68, rings = 4 } = {}) {
     const top = y + (Math.sin(angle(i)) < -0.15 ? -(lines.length - 1) * 12 : 4);
     lines.forEach((line, k) => g.text(x, top + k * 12, line, anchor, 'label radar-label'));
   });
+
+  // A legend, when more than the one shape is drawn.
+  if (named) {
+    const width = 108;
+    const left = cx - (named * width) / 2;
+    shapes.filter((s) => s.name).forEach((s, i) => {
+      const x = left + i * width;
+      const style = s.color ? ` style="--shape-color: ${s.color}"` : '';
+      g.raw(`<rect x="${x}" y="${H - 14}" width="10" height="10" rx="2" class="radar-swatch"${style}/>`);
+      g.text(x + 16, H - 5, s.name, 'start', 'label radar-label');
+    });
+  }
   return { svg: g.toString(), width: W, height: H };
 }
