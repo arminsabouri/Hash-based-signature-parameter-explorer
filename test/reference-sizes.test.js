@@ -5,7 +5,7 @@ import sphincs from '../js/schemes/sphincs.js';
 import shrincs from '../js/schemes/shrincs.js';
 import fors from '../js/schemes/fors.js';
 import wots from '../js/schemes/wots.js';
-import * as wotsTw from '../js/primitives/wots-tw.js';
+import * as plainWots from '../js/primitives/wots.js';
 import { bytes, derive } from './helpers.js';
 
 // Sizes published by FIPS 205 and by the SHRINCS BIP. These are the numbers a
@@ -46,24 +46,23 @@ test('SPHINCS+ reproduces the SHRINCS stateless constants', () => {
   assert.equal(Math.log2(d.leaves), 45, 'hypertree leaves');
 });
 
-test('WOTS-TW reproduces the SHRINCS stateless WOTS constants', () => {
-  const { w, len1, len2, len } = wotsTw.lengths(128, 4);
-  assert.equal(len1, 32, 'WOTS_TW_CHAIN_COUNT1');
-  assert.equal(len2, 3, 'WOTS_TW_CHAIN_COUNT2');
-  assert.equal(len, 35, 'WOTS_TW_CHAIN_COUNT');
-  assert.equal(len1 * (w - 1), 480, 'WOTS_TW_CHECKSUM_MAX');
+test('WOTS reproduces the SHRINCS stateless chain counts', () => {
+  const { w, len1, len2, len } = plainWots.lengths(128, 4);
+  assert.equal(len1, 32, 'message chains');
+  assert.equal(len2, 3, 'checksum chains');
+  assert.equal(len, 35, 'chains in total');
+  assert.equal(len1 * (w - 1), 480, 'largest checksum');
 
   const d = derive(wots, { n: 128, b: 4, plusC: false });
-  assert.equal(bytes(d.sizes.sig), 560, 'WOTS_TW_CHAINS_SIZE');
+  assert.equal(bytes(d.sizes.sig), 560, 'size of the chain hashes');
 });
 
-test('WOTS+C reproduces the SHRINCS stateful WOTS constants', () => {
+test('WOTS+C reproduces the SHRINCS stateful chain counts', () => {
   const d = derive(wots, { n: 128, b: 4, z: 0, plusC: true });
-  assert.equal(d.l, 32, 'WOTS_C_CHAIN_COUNT');
-  assert.equal(bytes(d.l * 128), 512, 'WOTS_C_CHAINS_SIZE');
-  // WOTS_C_CONSTANT_SUM is the parameter panel's default for S.
-  const { S } = { ...{}, ...wotsDefaults() };
-  assert.equal(S, 240, 'WOTS_C_CONSTANT_SUM');
+  assert.equal(d.l, 32, 'signed chains');
+  assert.equal(bytes(d.l * 128), 512, 'size of the chain hashes');
+  // The constant sum is the parameter panel's default for S.
+  assert.equal(wotsDefaults().S, 240, 'constant sum');
 });
 
 function wotsDefaults() {
@@ -86,7 +85,7 @@ test('SHRINCS reproduces its published key and signature sizes', () => {
   assert.equal(bytes(d.sl.sizes.sig), 5777, 'SHRINCS_SL_SIGNATURE_SIZE');
   assert.equal(bytes(d.sl.sizes.fors), 2240, 'FORS_SIGNATURE_SIZE');
   assert.equal(bytes(d.sl.sizes.ht), 3520, 'HYPERTREE_SIGNATURE_SIZE');
-  assert.equal(bytes(d.sf.sizes.chains), 512, 'WOTS_C_CHAINS_SIZE');
+  assert.equal(bytes(d.sf.sizes.chains), 512, 'size of the chain hashes');
 
   // FXMSS_SIGNATURE_SIZE_MIN and SHRINCS_SF_SIGNATURE_SIZE_MIN, at depth 1.
   const shallow = derive(shrincs, { depth: 1 });

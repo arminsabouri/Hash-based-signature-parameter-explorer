@@ -82,7 +82,7 @@
       <button type="button" role="tab" :aria-selected="selected === 'lamport'"
               @click="show('lamport')">Lamport OTS</button>
       <button type="button" role="tab" :aria-selected="selected === 'wots'"
-              @click="show('wots')">WOTS-TW / WOTS+C</button>
+              @click="show('wots')">WOTS / WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss'"
               @click="show('xmss')">XMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
@@ -156,7 +156,7 @@
     <section class="scheme" x-data="scheme('wots')" x-show="selected === 'wots'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro" x-show="!state.plusC">
-        WOTS-TW signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
+        WOTS signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
         <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
         \(w - 1\) times to reach \(pk_i\). The signature reveals the value at position <strong>\(\boldsymbol{b_i}\)</strong> of each chain, and
@@ -165,7 +165,7 @@
       </p>
 
       <p class="scheme-intro" x-show="state.plusC">
-        WOTS+C replaces the checksum chains of WOTS-TW with a search. The signer increments a counter until the
+        WOTS+C replaces the checksum chains of WOTS with a search. The signer increments a counter until the
         digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
         digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
         \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
@@ -414,7 +414,7 @@
         signs the root below it, as in XMSS<sup>MT</sup>. The signature is
         <strong>\(\boldsymbol{(R, \sigma_{\mathbf{FORS}}, \sigma_{\mathbf{HT}})}\)</strong>. Because the digest
         picks the leaf, the signer keeps no state, and the same FORS key pair can be selected more than once.
-        The OTS is WOTS-TW or WOTS+C, and the few-time signature is FORS or FORS+C.
+        The OTS is WOTS or WOTS+C, and the few-time signature is FORS or FORS+C.
       </p>
 
       <div class="explorer wide-results">

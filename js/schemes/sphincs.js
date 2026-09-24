@@ -2,7 +2,7 @@ import * as fors from '../primitives/fors.js';
 import * as merkleTree from '../primitives/merkle-tree.js';
 import * as messageHash from '../primitives/message-hash.js';
 import * as wotsC from '../primitives/wots-c.js';
-import * as wotsTw from '../primitives/wots-tw.js';
+import * as plainWots from '../primitives/wots.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
   blockSpace, exhaustProbability, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
@@ -13,7 +13,7 @@ import { drawForest, drawHypertree, svg, tradeoffSvg } from '../draw.js';
 // SPHINCS+, the structure standardized as SLH-DSA in FIPS 205: a FORS key
 // pair at every bottom-layer leaf of an XMSS^MT hypertree. The message digest
 // selects the leaf, so the signer keeps no state. The OTS of the hypertree is
-// WOTS-TW or WOTS+C, and the few-time signature is FORS or FORS+C.
+// WOTS or WOTS+C, and the few-time signature is FORS or FORS+C.
 // Defaults are the parameters of SLH-DSA-SHA2-128s.
 
 const HT = 'Hypertree';
@@ -28,7 +28,7 @@ const forsParams = fors.parameters(FORS);
 
 const otsModel = (state) => (state.wotsPlusC
   ? wotsC.model({ ...state, r: state.wotsR, compressed: true })
-  : wotsTw.model({ ...state, compressed: true }));
+  : plainWots.model({ ...state, compressed: true }));
 
 // FIPS 205 message digest: ka bits for the FORS indices, h - h' bits for the
 // tree index, and h' bits for the leaf index, each padded to whole bytes.
@@ -286,7 +286,7 @@ const scheme = {
     },
     {
       heading: 'Hash calls',
-      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. With WOTS-TW, signing and verification are the worst case over all messages. ${messageHashNote} ${hashCallsNote}`,
+      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. With WOTS, signing and verification are the worst case over all messages. ${messageHashNote} ${hashCallsNote}`,
       rows: [
         { label: 'Key generation', value: (d) => hashCalls(d.calls.keygen) },
         { label: 'Signing', value: (d) => hashCalls(d.calls.sign) },
@@ -354,7 +354,7 @@ export function sphincsDiagram() {
   return {
     get drawing() {
       const { hp, d, k, a, forsPlusC, wotsPlusC } = this.state;
-      return sphincsSvg(hp, d, k, a, forsPlusC, wotsPlusC ? 'WOTS+C' : 'WOTS-TW');
+      return sphincsSvg(hp, d, k, a, forsPlusC, wotsPlusC ? 'WOTS+C' : 'WOTS');
     },
   };
 }

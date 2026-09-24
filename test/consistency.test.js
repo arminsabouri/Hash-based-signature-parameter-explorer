@@ -63,12 +63,12 @@ test("SHRINCS's components match the standalone tabs", () => {
 });
 
 test('WOTS+C trades the checksum chains for a counter', () => {
-  const tw = derive(wots, { n: 128, b: 4, plusC: false });
+  const plain = derive(wots, { n: 128, b: 4, plusC: false });
   const c = derive(wots, { n: 128, b: 4, z: 0, S: 240, r: 32, plusC: true });
-  assert.equal(tw.len, 35, 'len1 + len2');
+  assert.equal(plain.len, 35, 'len1 + len2');
   assert.equal(c.l, 32, 'signed chains');
   // Three checksum chains drop out; a 32-bit counter comes in.
-  assert.equal(c.sizes.sig, tw.sizes.sig - 3 * 128 + 32);
+  assert.equal(c.sizes.sig, plain.sizes.sig - 3 * 128 + 32);
 });
 
 test('FORS+C drops the last tree and adds a counter', () => {

@@ -1,7 +1,7 @@
-import * as wotsTw from '../primitives/wots-tw.js';
+import * as plainWots from '../primitives/wots.js';
 import * as wotsC from '../primitives/wots-c.js';
 import { chainsOf } from '../primitives/wots-c.js';
-import { digitSumDistribution, digits, lengths } from '../primitives/wots-tw.js';
+import { digitSumDistribution, digits, lengths } from '../primitives/wots.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
   blockSpace, compressionsTooltip, counterExhaustion, hashCalls, hashCallsNote, oneTime, signatureBudget,
@@ -9,18 +9,18 @@ import {
 } from '../common-results.js';
 import { chainCells } from '../draw.js';
 
-// WOTS-TW, with a toggle to WOTS+C. The WOTS+C parameters z, S, and r are
+// WOTS, with a toggle to WOTS+C. The WOTS+C parameters z, S, and r are
 // shown only when it is on.
 
-const tw = (d) => !d.plusC;
+const plain = (d) => !d.plusC;
 const plusC = (d) => d.plusC;
 
 export default {
   id: 'wots',
-  title: (s) => (s.plusC ? 'WOTS+C' : 'WOTS-TW'),
+  title: (s) => (s.plusC ? 'WOTS+C' : 'WOTS'),
 
   parameters: [
-    ...wotsTw.parameters(),
+    ...plainWots.parameters(),
     {
       key: 'plusC', type: 'checkbox', default: false,
       label: 'WOTS+C',
@@ -35,14 +35,14 @@ export default {
   ],
 
   derive(state) {
-    const m = state.plusC ? wotsC.model(state) : wotsTw.model(state);
+    const m = state.plusC ? wotsC.model(state) : plainWots.model(state);
     return { ...m, plusC: state.plusC, ...withMidstate(m) };
   },
 
   results: [
     {
       heading: 'Chains',
-      show: tw,
+      show: plain,
       tooltip: '\\(\\mathrm{len}_1 = \\lceil n / \\log_2 w \\rceil\\) chains sign the message and \\(\\mathrm{len}_2\\) chains sign the checksum, whose maximum is \\(\\mathrm{len}_1 (w-1)\\).',
       rows: [
         { label: 'Message chains (\\(\\mathrm{len}_1\\))', value: (d) => num(d.len1) },
@@ -78,7 +78,7 @@ export default {
     },
     {
       heading: 'Hash calls',
-      show: tw,
+      show: plain,
       tooltip: `Key generation computes every chain to its end. Signing computes chain \\(i\\) up to position \\(b_i\\) and verification finishes it, so together they take \\(\\mathrm{len}(w-1)\\) steps. Worst case is the maximum over all messages. ${hashCallsNote}`,
       rows: [
         { label: 'Key generation', value: (d) => hashCalls(d.keygen, num) },
@@ -103,8 +103,8 @@ export default {
       tooltip: compressionsTooltip,
       rows: [
         { label: 'Key generation', value: (d) => num(d.keygenCompressions) },
-        { label: 'Signing (worst case)', show: tw, value: (d) => num(d.signCompressions) },
-        { label: 'Verification (worst case)', show: tw, value: (d) => num(d.verifyCompressions) },
+        { label: 'Signing (worst case)', show: plain, value: (d) => num(d.signCompressions) },
+        { label: 'Verification (worst case)', show: plain, value: (d) => num(d.verifyCompressions) },
         { label: 'Signing (WC search)', show: plusC, value: (d) => approx(d.signCompressions) },
         { label: 'Verification', show: plusC, value: (d) => num(d.verifyCompressions) },
       ],

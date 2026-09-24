@@ -1,7 +1,7 @@
 import * as fors from '../primitives/fors.js';
 import * as merkleTree from '../primitives/merkle-tree.js';
 import * as wotsC from '../primitives/wots-c.js';
-import * as wotsTw from '../primitives/wots-tw.js';
+import * as plainWots from '../primitives/wots.js';
 import { compressions } from '../sha256.js';
 import { approx, bytes, num } from '../scheme.js';
 import { blockSpace, hashCalls, hashCallsNote, withMidstate } from '../common-results.js';
@@ -82,7 +82,7 @@ function stateful(state) {
 // leaf of a hypertree of d layers of height h'.
 function stateless(state) {
   const { n, d, hp } = state;
-  const ots = wotsTw.model({ n, b: state.slB, compressed: true });
+  const ots = plainWots.model({ n, b: state.slB, compressed: true });
   const tree = merkleTree.model({ h: hp, n }, ots);
   const f = fors.model({ ...state, plusC: false }, 0);
   const msgVerify = statelessDigest(n / 8, digestBits(state));
@@ -145,12 +145,12 @@ export default {
     {
       key: 'd', type: 'range', min: 1, max: 32, step: 1, default: 5, group: SL,
       label: '\\(d\\) (number of layers)',
-      tooltip: 'The hypertree has total height \\(h = d \\cdot h\'\\). Each layer adds one WOTS-TW signature and one authentication path to the stateless signature.',
+      tooltip: 'The hypertree has total height \\(h = d \\cdot h\'\\). Each layer adds one WOTS signature and one authentication path to the stateless signature.',
     },
     {
       key: 'hp', type: 'range', min: 1, max: 20, step: 1, default: 9, group: SL,
       label: '\\(h\'\\) (height of each XMSS tree)',
-      tooltip: 'Each tree of the hypertree has \\(2^{h\'}\\) WOTS-TW leaves. Key generation builds the top-layer tree.',
+      tooltip: 'Each tree of the hypertree has \\(2^{h\'}\\) WOTS leaves. Key generation builds the top-layer tree.',
     },
     { ...pick(forsParams, ['a'])[0], default: 13 },
     { ...pick(forsParams, ['k'])[0], default: 10 },
@@ -284,7 +284,7 @@ function shrincsSvg(state) {
   // Stateless component.
   const slTop = sfBottom + 54;
   const leaf = drawHypertree(g, {
-    hp, d, left: 120, right: W - 160, bx: W - 142, top: slTop, otsLabel: 'WOTS-TW', rootLabel: 'sl_root',
+    hp, d, left: 120, right: W - 160, bx: W - 142, top: slTop, otsLabel: 'WOTS', rootLabel: 'sl_root',
   });
   const forestTop = leaf.y + 96;
   const left = 70, right = W - 150;
@@ -292,7 +292,7 @@ function shrincsSvg(state) {
   g.line(leaf.x, leaf.y + 7, leaf.x, leaf.y + 56, 'ots-edge');
   g.line(leaf.x, leaf.y + 56, pkX, leaf.y + 56, 'ots-edge');
   g.line(pkX, leaf.y + 56, pkX, forestTop - 7, 'ots-edge');
-  g.text(leaf.x + 10, leaf.y + 30, 'WOTS-TW key signs the FORS public key', 'start', 'label ots-label');
+  g.text(leaf.x + 10, leaf.y + 30, 'WOTS key signs the FORS public key', 'start', 'label ots-label');
   const forest = drawForest(g, {
     k, a, plusC: false, left, right, top: forestTop, bx: W - 130, pkLabel: '',
   });

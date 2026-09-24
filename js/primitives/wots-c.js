@@ -1,5 +1,5 @@
 import { tweakedCompressions } from '../sha256.js';
-import { digitSumDistribution } from './wots-tw.js';
+import { digitSumDistribution } from './wots.js';
 
 // WOTS+C, Section 5 of Kudinov and Nick, "Hash-based Signature Schemes for Bitcoin".
 

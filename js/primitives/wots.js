@@ -1,6 +1,6 @@
 import { tweakedCompressions } from '../sha256.js';
 
-// WOTS-TW, Section 4 of Kudinov and Nick, "Hash-based Signature Schemes for Bitcoin".
+// WOTS, Section 4 of Kudinov and Nick, "Hash-based Signature Schemes for Bitcoin".
 // The message length m equals n, as in SPHINCS+.
 
 const bitLength = (x) => (x === 0 ? 0 : Math.floor(Math.log2(x)) + 1);
