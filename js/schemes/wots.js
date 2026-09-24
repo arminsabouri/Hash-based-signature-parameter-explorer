@@ -4,8 +4,8 @@ import { chainsOf } from '../primitives/wots-c.js';
 import { digitSumDistribution, digits, lengths } from '../primitives/wots-tw.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, compressionsTooltip, counterExhaustion, oneTime, signatureBudget, successProbability, wcSearch,
-  withMidstate,
+  blockSpace, compressionsTooltip, counterExhaustion, hashCalls, hashCallsNote, oneTime, signatureBudget,
+  successProbability, wcSearch, withMidstate,
 } from '../common-results.js';
 import { chainCells } from '../draw.js';
 
@@ -79,21 +79,21 @@ export default {
     {
       heading: 'Hash calls',
       show: tw,
-      tooltip: 'Key generation computes every chain to its end. Signing computes chain \\(i\\) up to position \\(b_i\\) and verification finishes it, so together they take \\(\\mathrm{len}(w-1)\\) steps. Worst case is the maximum over all messages.',
+      tooltip: `Key generation computes every chain to its end. Signing computes chain \\(i\\) up to position \\(b_i\\) and verification finishes it, so together they take \\(\\mathrm{len}(w-1)\\) steps. Worst case is the maximum over all messages. ${hashCallsNote}`,
       rows: [
-        { label: 'Key generation', value: (d) => `${num(d.keygen.prf)} \\(\\mathbf{PRF}\\) + ${num(d.keygen.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Signing (worst case)', value: (d) => `${num(d.sign.prf)} \\(\\mathbf{PRF}\\) + ${num(d.sign.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Verification (worst case)', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.keygen, num) },
+        { label: 'Signing (worst case)', value: (d) => hashCalls(d.sign, num) },
+        { label: 'Verification (worst case)', value: (d) => hashCalls(d.verify, num) },
       ],
     },
     {
       heading: 'Hash calls',
       show: plusC,
-      tooltip: 'Signing computes chain \\(i\\) up to position \\(a_i\\), \\(S_{w,n}\\) steps in total, plus one \\(\\mathrm{Th}\\) per search trial. Verification recomputes the digest once and takes \\(l(w-1) - S_{w,n}\\) steps for every message.',
+      tooltip: `Signing computes chain \\(i\\) up to position \\(a_i\\), \\(S_{w,n}\\) steps in total, plus one \\(\\mathrm{Th}\\) per search trial. Verification recomputes the digest once and takes \\(l(w-1) - S_{w,n}\\) steps for every message. ${hashCallsNote}`,
       rows: [
-        { label: 'Key generation', value: (d) => `${num(d.keygen.prf)} \\(\\mathbf{PRF}\\) + ${num(d.keygen.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Signing (WC search)', value: (d) => `${num(d.sign.prf)} \\(\\mathbf{PRF}\\) + ${approx(d.sign.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.keygen, num) },
+        { label: 'Signing (WC search)', value: (d) => hashCalls(d.sign) },
+        { label: 'Verification', value: (d) => hashCalls(d.verify, num) },
       ],
     },
     // The SHA-256 compressions group, hidden for now.

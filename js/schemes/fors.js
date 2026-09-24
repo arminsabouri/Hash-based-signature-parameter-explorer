@@ -3,8 +3,8 @@ import { forgeryLog2 } from '../primitives/fors.js';
 import * as messageHash from '../primitives/message-hash.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, counterExhaustion, messageCompressionsTooltip, messageHashNote, probability, signatureBudget,
-  withMidstate,
+  blockSpace, counterExhaustion, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
+  probability, signatureBudget, withMidstate,
 } from '../common-results.js';
 import { drawForest, svg } from '../draw.js';
 
@@ -92,12 +92,12 @@ export default {
     },
     {
       heading: 'Hash calls',
-      tooltip: `Key generation builds every tree and hashes the \\(k\\) roots into the public key. Without a cache, signing rebuilds the trees to get the authentication paths. With the trees cached, signing derives the \\(k\\) revealed leaves. ${messageHashNote}`,
+      tooltip: `Key generation builds every tree and hashes the \\(k\\) roots into the public key. Without a cache, signing rebuilds the trees to get the authentication paths. With the trees cached, signing derives the \\(k\\) revealed leaves. ${messageHashNote} ${hashCallsNote}`,
       rows: [
-        { label: 'Key generation', value: (d) => `${approx(d.keygen.prf)} \\(\\mathbf{PRF}\\) + ${approx(d.keygen.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Signing (no cache)', value: (d) => `${approx(d.sign.prf)} \\(\\mathbf{PRF}\\) + ${approx(d.sign.th)} \\(\\mathrm{Th}\\)` },
-        { label: 'Signing (cached trees)', value: (d) => `${num(d.signCached.prf)} \\(\\mathbf{PRF}\\)` },
-        { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.keygen) },
+        { label: 'Signing (no cache)', value: (d) => hashCalls(d.sign) },
+        { label: 'Signing (cached trees)', value: (d) => hashCalls(d.signCached, num) },
+        { label: 'Verification', value: (d) => hashCalls(d.verify, num) },
       ],
     },
     // The SHA-256 compressions group, hidden for now.

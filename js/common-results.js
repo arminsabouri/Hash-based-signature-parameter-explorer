@@ -84,21 +84,25 @@ export const otsSearch = (tooltip) => ({
   rows: [successProbability, wcSearch],
 });
 
+// A hash call is one PRF or one Th. Both take a tweaked input of the same
+// shape and cost the same, so they are counted together.
+export const hashCalls = (c, fmt = approx) => fmt((c.prf ?? 0) + (c.th ?? 0));
+export const hashCallsNote = 'Counts \\(\\mathbf{PRF}\\) and \\(\\mathrm{Th}\\) calls together.';
+
 // Hash calls and compressions for key generation, signing without and with
 // a cache (`cached` names what is cached), and verification.
 export function treeCosts(hashTooltip, cached) {
-  const calls = (c, fmt = approx) => `${fmt(c.prf)} \\(\\mathbf{PRF}\\) + ${approx(c.th)} \\(\\mathrm{Th}\\)`;
   const signing = 'Signing (no cache, WC search)';
   const signingCached = `Signing (cached ${cached}, WC search)`;
   return [
     {
       heading: 'Hash calls',
-      tooltip: `${hashTooltip} ${messageHashNote}`,
+      tooltip: `${hashTooltip} ${messageHashNote} ${hashCallsNote}`,
       rows: [
-        { label: 'Key generation', value: (d) => calls(d.calls.keygen) },
-        { label: signing, value: (d) => calls(d.calls.sign) },
-        { label: signingCached, value: (d) => calls(d.calls.signCached, num) },
-        { label: 'Verification', value: (d) => `${num(d.calls.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.calls.keygen) },
+        { label: signing, value: (d) => hashCalls(d.calls.sign) },
+        { label: signingCached, value: (d) => hashCalls(d.calls.signCached, num) },
+        { label: 'Verification', value: (d) => hashCalls(d.calls.verify, num) },
       ],
     },
     // The SHA-256 compressions group, hidden for now.

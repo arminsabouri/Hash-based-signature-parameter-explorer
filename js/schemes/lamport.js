@@ -1,6 +1,8 @@
 import * as lamport from '../primitives/lamport.js';
 import { bytes, num } from '../scheme.js';
-import { blockSpace, compressionsTooltip, oneTime, signatureBudget, withMidstate } from '../common-results.js';
+import {
+  blockSpace, compressionsTooltip, hashCalls, hashCallsNote, oneTime, signatureBudget, withMidstate,
+} from '../common-results.js';
 
 export default {
   id: 'lamport',
@@ -26,15 +28,11 @@ export default {
     },
     {
       heading: 'Hash calls',
-      tooltip: 'Key generation hashes all \\(2n\\) secret values. Signing only reveals values, plus \\(n\\) \\(\\mathbf{PRF}\\) calls to rederive them when seed-based. Verification hashes the \\(n\\) revealed values.',
+      tooltip: `Key generation hashes all \\(2n\\) secret values. Signing only reveals values, plus \\(n\\) \\(\\mathbf{PRF}\\) calls to rederive them when seed-based. Verification hashes the \\(n\\) revealed values. ${hashCallsNote}`,
       rows: [
-        {
-          label: 'Key generation',
-          value: (d) => `${num(d.keygen.th)} \\(\\mathrm{Th}\\)`
-            + (d.keygen.prf ? ` + ${num(d.keygen.prf)} \\(\\mathbf{PRF}\\)` : ''),
-        },
-        { label: 'Signing', value: (d) => (d.sign.prf ? `${num(d.sign.prf)} \\(\\mathbf{PRF}\\)` : '0') },
-        { label: 'Verification', value: (d) => `${num(d.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.keygen, num) },
+        { label: 'Signing', value: (d) => hashCalls(d.sign, num) },
+        { label: 'Verification', value: (d) => hashCalls(d.verify, num) },
       ],
     },
     // The SHA-256 compressions group, hidden for now.

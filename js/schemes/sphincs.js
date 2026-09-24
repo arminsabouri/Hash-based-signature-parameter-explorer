@@ -5,8 +5,8 @@ import * as wotsC from '../primitives/wots-c.js';
 import * as wotsTw from '../primitives/wots-tw.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, exhaustProbability, messageCompressionsTooltip, messageHashNote, probability,
-  signatureBudget, withMidstate,
+  blockSpace, exhaustProbability, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
+  probability, signatureBudget, withMidstate,
 } from '../common-results.js';
 import { drawForest, drawHypertree, svg } from '../draw.js';
 
@@ -34,8 +34,6 @@ const otsModel = (state) => (state.wotsPlusC
 // tree index, and h' bits for the leaf index, each padded to whole bytes.
 const digestBits = ({ k, a, hp, d }) =>
   8 * (Math.ceil((k * a) / 8) + Math.ceil(((d - 1) * hp) / 8) + Math.ceil(hp / 8));
-
-const calls = (c) => `${approx(c.prf)} \\(\\mathbf{PRF}\\) + ${approx(c.th)} \\(\\mathrm{Th}\\)`;
 
 export default {
   id: 'sphincs',
@@ -192,11 +190,11 @@ export default {
     },
     {
       heading: 'Hash calls',
-      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. With WOTS-TW, signing and verification are the worst case over all messages. ${messageHashNote}`,
+      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. With WOTS-TW, signing and verification are the worst case over all messages. ${messageHashNote} ${hashCallsNote}`,
       rows: [
-        { label: 'Key generation', value: (d) => calls(d.calls.keygen) },
-        { label: 'Signing', value: (d) => calls(d.calls.sign) },
-        { label: 'Verification', value: (d) => `${approx(d.calls.verify.th)} \\(\\mathrm{Th}\\)` },
+        { label: 'Key generation', value: (d) => hashCalls(d.calls.keygen) },
+        { label: 'Signing', value: (d) => hashCalls(d.calls.sign) },
+        { label: 'Verification', value: (d) => hashCalls(d.calls.verify, num) },
       ],
     },
     // The SHA-256 compressions group, hidden for now.
