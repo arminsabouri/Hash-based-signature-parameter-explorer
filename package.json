@@ -1,0 +1,9 @@
+{
+  "name": "hash-dsa-params",
+  "private": true,
+  "type": "module",
+  "description": "Hash Based Digital Signature Parameter Explorer. The site itself has no build step; this file exists so Node can run the tests as ES modules.",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

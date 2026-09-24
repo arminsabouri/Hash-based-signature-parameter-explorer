@@ -43,14 +43,18 @@ export function parameters(group) {
 // Signing uses the WC search: the number of trials that suffices except
 // with probability 2^-30.
 export function model(state) {
-  const { n, b, z, S, r, compressed = true } = state;
+  const { n, b, z, S: target, r, compressed = true } = state;
   const w = 2 ** b;
   const len1 = len1Of(state);
   const l = len1 - z;
 
   // p_nu = nu / w^len1: the l signed digits sum to S and the z zero digits are 0.
+  // The target is capped at the largest sum l chains can reach, so that it
+  // always has some digit tuple behind it. The parameter panel caps it the
+  // same way, so this only guards states reached another way.
   const dist = digitSumDistribution(w, l, b);
-  const p = (dist[S] ?? 0) * w ** -z;
+  const S = Math.min(target, dist.length - 1);
+  const p = dist[S] * w ** -z;
   const wcSearch = Math.ceil((-30 * Math.LN2) / Math.log1p(-p));
   // log2 of the probability that all 2^r counter values fail.
   const exhaustLog2 = (2 ** r * Math.log1p(-p)) / Math.LN2;

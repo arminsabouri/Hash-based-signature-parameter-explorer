@@ -84,7 +84,7 @@ function resolve(value, state) {
   return typeof value === 'function' ? value(state) : value;
 }
 
-function initialState(parameters) {
+export function initialState(parameters) {
   const state = {};
   for (const p of parameters) if (typeof p.default !== 'function') state[p.key] = p.default;
   for (const p of parameters) if (typeof p.default === 'function') state[p.key] = p.default(state);
