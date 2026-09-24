@@ -3,7 +3,7 @@ import * as messageHash from '../primitives/message-hash.js';
 import * as wotsC from '../primitives/wots-c.js';
 import { bytes } from '../scheme.js';
 import {
-  OTS, TREE, blockSpace, otsSearch, treeBudget, treeCosts, treeGroups, treeKeys, withMidstate,
+  OTS, TREE, blockSpace, otsSearch, sigPart, treeBudget, treeCosts, treeGroups, treeKeys, withMidstate,
 } from '../common-results.js';
 import { balancedTreeSvg } from '../draw.js';
 
@@ -57,11 +57,12 @@ export function deriveSingleTree(state, tree) {
 export const singleTreeSignature = (tooltip) => ({
   heading: 'Signature',
   tooltip,
+  bar: true,
   rows: [
-    { label: 'Leaf index \\(i\\)', group: TREE, value: (d) => bytes(d.sizes.index) },
-    { label: 'Randomness \\(R\\)', value: (d) => bytes(d.sizes.R) },
-    { label: 'WOTS+C signature (\\(\\sigma_{\\mathrm{OTS}}\\))', group: OTS, value: (d) => bytes(d.sizes.ots) },
-    { label: '\\(\\mathrm{AuthPath}_i\\)', group: TREE, value: (d) => bytes(d.sizes.authPath) },
+    sigPart('Leaf index \\(i\\)', 'index', TREE),
+    sigPart('Randomness \\(R\\)', 'R'),
+    sigPart('WOTS+C signature (\\(\\sigma_{\\mathrm{OTS}}\\))', 'ots', OTS),
+    sigPart('\\(\\mathrm{AuthPath}_i\\)', 'authPath', TREE),
     { label: 'Total', value: (d) => bytes(d.sizes.sig) },
   ],
 });

@@ -41,6 +41,36 @@ export function scheme(config) {
       return cache;
     },
 
+    // Segments of a results group's bar: the rows that carry a bit length,
+    // with their share of the total and their index in the group.
+    barParts(group) {
+      const d = this.derived;
+      const parts = group.rows
+        .map((row, index) => ({ row, index }))
+        .filter(({ row }) => row.bits && (!row.show || row.show(d)));
+      const total = parts.reduce((a, { row }) => a + row.bits(d), 0);
+      return parts.map((p) => ({ ...p, width: (100 * p.row.bits(d)) / total }));
+    },
+
+    // The line under the bar: the hovered segment, or a hint when none is.
+    barReadout(group, active) {
+      if (active === null) return 'Hover a segment to see what it contributes.';
+      const d = this.derived;
+      const row = group.rows[active];
+      const total = this.barParts(group).reduce((a, p) => a + p.row.bits(d), 0);
+      const share = (100 * row.bits(d)) / total;
+      return `${row.label}: ${bytes(row.bits(d))}, ${share.toFixed(1)}% of the signature`;
+    },
+
+    // Plain-text form of a row label, for a bar segment's accessible name.
+    barLabel(row) {
+      return row.label
+        .replace(/\\[()]/g, '')
+        .replace(/\\[a-zA-Z]+|[{}_^]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    },
+
     tooltipId(...parts) {
       return [config.id, 'tip', ...parts].join('-');
     },

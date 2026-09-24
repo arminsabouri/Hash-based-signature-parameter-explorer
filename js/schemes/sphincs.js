@@ -6,7 +6,7 @@ import * as wotsTw from '../primitives/wots-tw.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
   blockSpace, exhaustProbability, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
-  probability, signatureBudget, withMidstate,
+  probability, sigPart, signatureBudget, withMidstate,
 } from '../common-results.js';
 import { drawForest, drawHypertree, svg } from '../draw.js';
 
@@ -150,11 +150,12 @@ export default {
     {
       heading: 'Signature',
       tooltip: 'The tuple \\((R, \\sigma_{\\mathrm{FORS}}, \\sigma_{\\mathrm{HT}})\\). The leaf index is derived from the digest, so it is not carried in the signature.',
+      bar: true,
       rows: [
-        { label: 'Randomness \\(R\\)', value: (d) => bytes(d.sizes.R) },
-        { label: 'FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', group: FORS, value: (d) => bytes(d.sizes.fors) },
-        { label: 'OTS signatures (\\(d \\times \\sigma_{\\mathrm{OTS}}\\))', group: OTS, value: (d) => bytes(d.sizes.ots) },
-        { label: '\\(d \\times \\mathrm{AuthPath}\\)', group: HT, value: (d) => bytes(d.sizes.authPath) },
+        sigPart('Randomness \\(R\\)', 'R'),
+        sigPart('FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', 'fors', FORS),
+        sigPart('OTS signatures (\\(d \\times \\sigma_{\\mathrm{OTS}}\\))', 'ots', OTS),
+        sigPart('\\(d \\times \\mathrm{AuthPath}\\)', 'authPath', HT),
         { label: 'Total', value: (d) => bytes(d.sizes.sig) },
       ],
     },

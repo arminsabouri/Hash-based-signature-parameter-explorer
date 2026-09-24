@@ -275,6 +275,20 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 .scheme-tabs + .scheme { margin-top: 1.5rem; }
 .scheme-tabs ~ .scheme { margin-top: 1.5rem; }
 
+/* The building blocks, a second row under the top-level tabs. */
+.scheme-tabs.sub-tabs {
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+  padding-left: 0.75rem;
+}
+.sub-tabs button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.9rem;
+  border-radius: 4px 4px 0 0;
+  opacity: 0.7;
+}
+.sub-tabs button[aria-selected="true"] { opacity: 1; }
+
 /* WOTS chains */
 .wots-chains { display: flex; flex-direction: column; gap: 0.5rem; }
 .wots-row, .wots-row-inner { display: flex; align-items: center; gap: 0.5rem; }
@@ -413,3 +427,32 @@ button.wots-digit { cursor: pointer; }
   font-size: 0.8rem;
 }
 .site-footer p { margin: 0.25rem 0; }
+
+/* Signature bar: one segment per component, coloured by its results group. */
+.sig-bar { margin: 0.4rem 0 0.7rem; }
+.sig-bar-track {
+  display: flex;
+  height: 1.15rem;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sig-bar-seg {
+  min-width: 3px;
+  padding: 0;
+  border: none;
+  background: var(--group-color);
+  cursor: pointer;
+}
+.sig-bar-seg + .sig-bar-seg { box-shadow: inset 1px 0 0 var(--background-color); }
+.sig-bar-seg.active { filter: brightness(1.4); }
+.sig-bar-readout {
+  margin: 0.3rem 0 0;
+  min-height: 1.3rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.result-row.highlight {
+  background: color-mix(in srgb, var(--group-color, var(--border-color)) 22%, transparent);
+  border-radius: 2px;
+}

@@ -4,7 +4,7 @@ import * as messageHash from '../primitives/message-hash.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
   blockSpace, counterExhaustion, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
-  probability, signatureBudget, withMidstate,
+  probability, sigPart, signatureBudget, withMidstate,
 } from '../common-results.js';
 import { drawForest, svg } from '../draw.js';
 
@@ -74,9 +74,10 @@ export default {
     {
       heading: 'Signature',
       tooltip: 'The randomness \\(R\\) and, for each tree with an authentication path, the revealed secret leaf and its \\(a\\) sibling nodes. FORS+C adds the last tree\'s first leaf and the counter.',
+      bar: true,
       rows: [
-        { label: 'Randomness \\(R\\)', value: (d) => bytes(d.sizes.R) },
-        { label: 'FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', value: (d) => bytes(d.sizes.fors) },
+        sigPart('Randomness \\(R\\)', 'R'),
+        sigPart('FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', 'fors'),
         { label: 'Total', value: (d) => bytes(d.sizes.sig) },
       ],
     },

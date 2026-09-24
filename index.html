@@ -25,7 +25,21 @@
     crossorigin="anonymous"></script>
 </head>
 <body>
-  <main x-data="{ selected: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'sphincs'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'lamport' }">
+  <main x-data="{
+    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors'],
+    selected: 'sphincs',
+    lastBlock: 'lamport',
+    init() {
+      const id = location.hash.slice(1);
+      if (id === 'sphincs' || this.blocks.includes(id)) this.selected = id;
+      if (this.blocks.includes(id)) this.lastBlock = id;
+    },
+    show(id) {
+      this.selected = id;
+      if (id !== 'sphincs') this.lastBlock = id;
+      history.replaceState(null, '', '#' + id);
+    },
+  }">
     <header>
       <h1>Hash Based Digital Signature Parameter Explorer</h1>
     </header>
@@ -55,21 +69,26 @@
       </p>
     </section>
 
-    <nav class="scheme-tabs" role="tablist">
-      <button type="button" role="tab" :aria-selected="selected === 'lamport'"
-              @click="selected = 'lamport'; history.replaceState(null, '', '#lamport')">Lamport OTS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'wots'"
-              @click="selected = 'wots'; history.replaceState(null, '', '#wots')">WOTS-TW / WOTS+C</button>
-      <button type="button" role="tab" :aria-selected="selected === 'xmss'"
-              @click="selected = 'xmss'; history.replaceState(null, '', '#xmss')">XMSS + WOTS+C</button>
-      <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
-              @click="selected = 'xmss-mt'; history.replaceState(null, '', '#xmss-mt')">XMSS<sup>MT</sup> + WOTS+C</button>
-      <button type="button" role="tab" :aria-selected="selected === 'fxmss'"
-              @click="selected = 'fxmss'; history.replaceState(null, '', '#fxmss')">FXMSS + WOTS+C</button>
-      <button type="button" role="tab" :aria-selected="selected === 'fors'"
-              @click="selected = 'fors'; history.replaceState(null, '', '#fors')">FORS</button>
+    <nav class="scheme-tabs" role="tablist" aria-label="Scheme">
       <button type="button" role="tab" :aria-selected="selected === 'sphincs'"
-              @click="selected = 'sphincs'; history.replaceState(null, '', '#sphincs')">SPHINCS+</button>
+              @click="show('sphincs')">SPHINCS+</button>
+      <button type="button" role="tab" :aria-selected="selected !== 'sphincs'"
+              @click="show(lastBlock)">Building Blocks</button>
+    </nav>
+
+    <nav class="scheme-tabs sub-tabs" role="tablist" aria-label="Building block" x-show="selected !== 'sphincs'">
+      <button type="button" role="tab" :aria-selected="selected === 'lamport'"
+              @click="show('lamport')">Lamport OTS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'wots'"
+              @click="show('wots')">WOTS-TW / WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'xmss'"
+              @click="show('xmss')">XMSS + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'xmss-mt'"
+              @click="show('xmss-mt')">XMSS<sup>MT</sup> + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'fxmss'"
+              @click="show('fxmss')">FXMSS + WOTS+C</button>
+      <button type="button" role="tab" :aria-selected="selected === 'fors'"
+              @click="show('fors')">FORS</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -483,7 +502,7 @@
       </ul>
     </template>
     <template x-for="(group, g) in config.results" :key="g">
-      <div x-show="!group.show || group.show(derived)">
+      <div x-show="!group.show || group.show(derived)" x-data="{ active: null }">
         <template x-if="group.heading">
           <h4><span x-text="group.heading"></span>
             <template x-if="group.tooltip">
@@ -494,10 +513,25 @@
             </template>
           </h4>
         </template>
+        <template x-if="group.bar">
+          <div class="sig-bar">
+            <div class="sig-bar-track">
+              <template x-for="part in barParts(group)" :key="part.index">
+                <button type="button" class="sig-bar-seg" :class="active === part.index && 'active'"
+                        :style="`width: ${part.width}%; --group-color: ${config.groups?.[part.row.group ?? group.group] ?? 'var(--c-94d2bd)'}`"
+                        :aria-label="barLabel(part.row)"
+                        @mouseenter="active = part.index" @mouseleave="active = null"
+                        @focus="active = part.index" @blur="active = null"></button>
+              </template>
+            </div>
+            <p class="sig-bar-readout" x-katex="barReadout(group, active)"></p>
+          </div>
+        </template>
         <dl>
           <template x-for="(row, r) in group.rows" :key="r">
             <template x-if="(!group.show || group.show(derived)) && (!row.show || row.show(derived))">
-              <div class="result-row" :class="(row.group ?? group.group) && 'grouped'"
+              <div class="result-row"
+                   :class="{ grouped: !!(row.group ?? group.group), highlight: active === r }"
                    :style="(row.group ?? group.group) && `--group-color: ${config.groups[row.group ?? group.group]}`">
                 <dt><span x-katex="row.label"></span>
                   <template x-if="row.tooltip">

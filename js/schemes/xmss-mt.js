@@ -3,7 +3,7 @@ import * as messageHash from '../primitives/message-hash.js';
 import * as wotsC from '../primitives/wots-c.js';
 import { bytes } from '../scheme.js';
 import {
-  OTS, TREE, blockSpace, otsSearch, treeBudget, treeCosts, treeGroups, treeKeys, withMidstate,
+  OTS, TREE, blockSpace, otsSearch, sigPart, treeBudget, treeCosts, treeGroups, treeKeys, withMidstate,
 } from '../common-results.js';
 import { drawHypertree, drawLeafChains, svg } from '../draw.js';
 
@@ -85,11 +85,12 @@ export default {
     {
       heading: 'Signature',
       tooltip: 'The leaf index \\(i\\), the message randomness \\(R\\), and for each of the \\(d\\) layers a WOTS+C signature with its counter and the \\(h\'\\) sibling nodes of its authentication path.',
+      bar: true,
       rows: [
-        { label: 'Leaf index \\(i\\)', group: TREE, value: (d) => bytes(d.sizes.index) },
-        { label: 'Randomness \\(R\\)', value: (d) => bytes(d.sizes.R) },
-        { label: 'WOTS+C signatures (\\(d \\times \\sigma_{\\mathrm{OTS}}\\))', group: OTS, value: (d) => bytes(d.sizes.ots) },
-        { label: '\\(d \\times \\mathrm{AuthPath}\\)', group: TREE, value: (d) => bytes(d.sizes.authPath) },
+        sigPart('Leaf index \\(i\\)', 'index', TREE),
+        sigPart('Randomness \\(R\\)', 'R'),
+        sigPart('WOTS+C signatures (\\(d \\times \\sigma_{\\mathrm{OTS}}\\))', 'ots', OTS),
+        sigPart('\\(d \\times \\mathrm{AuthPath}\\)', 'authPath', TREE),
         { label: 'Total', value: (d) => bytes(d.sizes.sig) },
       ],
     },

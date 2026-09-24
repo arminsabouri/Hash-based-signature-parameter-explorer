@@ -34,6 +34,12 @@ export const blockSpace = {
   ],
 };
 
+// A row of a signature group that is also a segment of the signature bar.
+// `key` names the entry of `sizes` that holds its bit length.
+export const sigPart = (label, key, group) => ({
+  label, group, bits: (d) => d.sizes[key], value: (d) => bytes(d.sizes[key]),
+});
+
 export function signatureBudget(...rows) {
   return { heading: 'Signature budget', rows };
 }
