@@ -166,7 +166,7 @@ export function balancedTreeSvg({ h, lines, l, w, compact = false }) {
 // The d layers of a hypertree, top layer first, with the layers between the
 // top and bottom elided when d > 3. An OTS key of each tree signs the root of
 // the tree below it. Returns the position of the bottom-layer leaf.
-export function drawHypertree(g, { hp, d, left, right, bx, top, otsLabel }) {
+export function drawHypertree(g, { hp, d, left, right, bx, top, otsLabel, rootLabel = 'Public key (root)' }) {
   const layers = d <= 3 ? [...Array(d).keys()].reverse() : [d - 1, null, 0];
   const gap = 56;
   let y = top;
@@ -176,7 +176,7 @@ export function drawHypertree(g, { hp, d, left, right, bx, top, otsLabel }) {
     g.line(from.x, from.y + 7, x, ty, 'ots-edge');
   };
 
-  g.text((left + right) / 2, y - 14, 'Public key (root)');
+  g.text((left + right) / 2, y - 14, rootLabel);
   for (const layer of layers) {
     if (layer === null) {
       const ly = y + 8;

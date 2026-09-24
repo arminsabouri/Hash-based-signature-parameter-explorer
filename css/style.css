@@ -456,3 +456,33 @@ button.wots-digit { cursor: pointer; }
   background: color-mix(in srgb, var(--group-color, var(--border-color)) 22%, transparent);
   border-radius: 2px;
 }
+
+/* Results with one column per signing path. */
+/* A wider results column, for the panels that carry two value columns. */
+.explorer.wide-results { grid-template-columns: 15rem minmax(0, 1fr) 24rem; }
+
+.results.two-columns .result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.75rem 4.75rem;
+  column-gap: 0.5rem;
+  align-items: baseline;
+}
+.results.two-columns .result-row dd { margin: 0; text-align: right; white-space: nowrap; }
+.results.two-columns .result-row dd:only-of-type { grid-column: 2 / -1; }
+
+/* Each value column keeps its path's colour the whole way down, so a figure
+   is readable as stateful or stateless without looking back at the heading. */
+.results.two-columns .result-row dd:not(:only-of-type) {
+  color: var(--group-color);
+  background: color-mix(in srgb, var(--group-color) 12%, transparent);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+}
+.results .column-heads { margin: 0.75rem 0 0; }
+.results .column-heads dd {
+  font-weight: 600;
+  color: var(--group-color);
+  background: none;
+  border-bottom: 2px solid var(--group-color);
+  border-radius: 0;
+}
