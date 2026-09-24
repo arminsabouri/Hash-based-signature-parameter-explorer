@@ -26,8 +26,20 @@ export function digits(x, w, count) {
 }
 
 // Distribution of the digit sum of len1 digits: the first uniform over
-// 2^topBits values, the rest uniform over w values.
+// 2^topBits values, the rest uniform over w values. The same distribution is
+// asked for repeatedly, so results are kept. Callers only read from them.
+const distributions = new Map();
+
 export function digitSumDistribution(w, len1, topBits) {
+  const key = `${w}|${len1}|${topBits}`;
+  const hit = distributions.get(key);
+  if (hit) return hit;
+  const dist = compute(w, len1, topBits);
+  distributions.set(key, dist);
+  return dist;
+}
+
+function compute(w, len1, topBits) {
   let dist = [1];
   const ranges = [2 ** topBits, ...new Array(len1 - 1).fill(w)];
   for (const r of ranges) {

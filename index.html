@@ -417,7 +417,7 @@
         The OTS is WOTS-TW or WOTS+C, and the few-time signature is FORS or FORS+C.
       </p>
 
-      <div class="explorer">
+      <div class="explorer wide-results">
         <aside class="parameters" data-template="parameters-panel"></aside>
 
         <div class="visualization" x-data="sphincsDiagram">
@@ -569,6 +569,11 @@
             </div>
             <p class="sig-bar-readout" x-katex="barReadout(group, active)"></p>
           </div>
+        </template>
+        <template x-if="!!group.tradeoff">
+          <svg class="tradeoff" :view-box.camel="`0 0 ${group.tradeoff(derived).width} ${group.tradeoff(derived).height}`"
+               x-html="group.tradeoff(derived).svg" role="img"
+               aria-label="Tradeoff diagram of block space consumption, signature generation speed, verification speed, key generation speed and signing budget"></svg>
         </template>
         <dl>
           <template x-for="(row, r) in group.rows" :key="r">

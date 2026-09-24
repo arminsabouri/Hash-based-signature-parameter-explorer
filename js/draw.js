@@ -13,6 +13,9 @@ export function svg() {
     circle(x, y, r, cls) {
       parts.push(`<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>`);
     },
+    polygon(points, cls) {
+      parts.push(`<polygon points="${points}" class="${cls}"/>`);
+    },
     rect(x, y, width, height, cls) {
       parts.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="2" class="${cls}"/>`);
     },
@@ -245,4 +248,42 @@ export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
   g.text(pkX, baseY + 70, `k = ${k} trees`, 'middle');
 
   return { pkX, pkY, baseY, bottom: baseY + 80 };
+}
+
+// A tradeoff diagram: one spoke per axis, with `value` in [0, 1] plotted along
+// it. `label` is an array of lines placed outside the vertex. Rings are drawn
+// at each quarter. The first axis points up and the rest follow clockwise.
+export function tradeoffSvg(axes, { radius = 68, rings = 4 } = {}) {
+  const W = 340, H = 226;
+  const cx = W / 2, cy = 116;
+  const g = svg();
+  const angle = (i) => (-Math.PI / 2) + (i * 2 * Math.PI) / axes.length;
+  const at = (i, r) => [cx + r * Math.cos(angle(i)), cy + r * Math.sin(angle(i))];
+  const ring = (r) => axes.map((_, i) => at(i, r).join(',')).join(' ');
+
+  for (let k = 1; k <= rings; k++) {
+    g.polygon(ring((radius * k) / rings), 'radar-grid');
+  }
+  axes.forEach((_, i) => {
+    const [x, y] = at(i, radius);
+    g.line(cx, cy, x, y, 'radar-spoke');
+  });
+
+  g.polygon(axes.map((a, i) => at(i, radius * a.value).join(',')).join(' '), 'radar-shape');
+  axes.forEach((a, i) => {
+    const [x, y] = at(i, radius * a.value);
+    g.circle(x, y, 3, 'radar-point');
+  });
+
+  // Labels outside each vertex, anchored away from the centre.
+  axes.forEach((a, i) => {
+    const [x, y] = at(i, radius + 10);
+    const dx = Math.cos(angle(i));
+    const anchor = dx > 0.15 ? 'start' : dx < -0.15 ? 'end' : 'middle';
+    const lines = a.label;
+    // Above the centre the block grows upwards, below it downwards.
+    const top = y + (Math.sin(angle(i)) < -0.15 ? -(lines.length - 1) * 12 : 4);
+    lines.forEach((line, k) => g.text(x, top + k * 12, line, anchor, 'label radar-label'));
+  });
+  return { svg: g.toString(), width: W, height: H };
 }

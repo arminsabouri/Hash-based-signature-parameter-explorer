@@ -8,7 +8,7 @@ import {
   blockSpace, exhaustProbability, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
   probability, sigPart, signatureBudget, withMidstate,
 } from '../common-results.js';
-import { drawForest, drawHypertree, svg } from '../draw.js';
+import { drawForest, drawHypertree, svg, tradeoffSvg } from '../draw.js';
 
 // SPHINCS+, the structure standardized as SLH-DSA in FIPS 205: a FORS key
 // pair at every bottom-layer leaf of an XMSS^MT hypertree. The message digest
@@ -35,7 +35,97 @@ const otsModel = (state) => (state.wotsPlusC
 const digestBits = ({ k, a, hp, d }) =>
   8 * (Math.ceil((k * a) / 8) + Math.ceil(((d - 1) * hp) / 8) + Math.ceil(hp / 8));
 
-export default {
+// The tradeoff diagram's five axes. Each reads a figure off the derived values;
+// `up` says which direction the axis grows in, so that a cost becomes a speed.
+const calls = (c) => (c.prf ?? 0) + (c.th ?? 0);
+const AXES = [
+  {
+    label: ['Block space', 'consumption'],
+    of: (d) => (d.sizes.sig + d.sizes.pk) / 8,
+  },
+  {
+    label: ['Signature', 'generation speed'],
+    of: (d) => 1 / calls(d.calls.sign),
+  },
+  { label: ['Verification', 'speed'], of: (d) => 1 / calls(d.calls.verify) },
+  { label: ['Key generation', 'speed'], of: (d) => 1 / calls(d.calls.keygen) },
+  { label: ['Signing budget'], of: (d) => d.leaves },
+];
+
+const resolve = (value, state) => (typeof value === 'function' ? value(state) : value);
+
+// The knobs that tune a counter search rather than the structure. Their
+// extremes are not useful as axis endpoints: a target sum of 0 asks every
+// digest digit to be zero, which at w = 256 is a 2^261 search, and that one
+// corner would stretch the signing axis past every realistic setting. They are
+// held at their defaults instead.
+const SEARCH_KEYS = new Set(['z', 'S', 'wotsR', 'forsR']);
+
+// Every corner of the structural parameter ranges: each slider at its minimum
+// or its maximum, and each toggle both ways. A slider whose bounds depend on
+// other parameters is resolved against the corner being built, which is why
+// the parameter order matters here.
+function cornerStates(parameters) {
+  const ranges = parameters.filter((p) => p.type === 'range' && !SEARCH_KEYS.has(p.key));
+  const held = parameters.filter((p) => p.type === 'range' && SEARCH_KEYS.has(p.key));
+  const flags = parameters.filter((p) => p.type === 'checkbox');
+  const states = [];
+  for (let f = 0; f < 2 ** flags.length; f++) {
+    for (let m = 0; m < 2 ** ranges.length; m++) {
+      const state = {};
+      flags.forEach((p, i) => { state[p.key] = Boolean(f & (1 << i)); });
+      ranges.forEach((p, i) => {
+        const lo = resolve(p.min, state);
+        const hi = resolve(p.max, state);
+        state[p.key] = (m & (1 << i)) ? hi : lo;
+      });
+      held.forEach((p) => { state[p.key] = resolve(p.default, state); });
+      states.push(state);
+    }
+  }
+  return states;
+}
+
+// The span of each axis over those corners. Each axis takes its own minimum
+// and maximum, since the corner that makes a signature largest is not the one
+// that makes key generation slowest. Computing this walks every corner, which
+// is too slow to do on first paint, so the result is pinned here and a test
+// checks it against a fresh computation.
+const AXIS_SPANS = [
+  [8, 343136],
+  [3.3858550252753835e-12, 0.013513513513513514],
+  [0.0000036825223805297676, 0.1111111111111111],
+  [1.0954219119121497e-10, 0.02857142857142857],
+  [2, 4.562440617622195e+192],
+];
+
+export function axisSpans(config) {
+  const spans = AXES.map(() => ({ min: Infinity, max: -Infinity }));
+  for (const state of cornerStates(config.parameters)) {
+    const derived = config.derive(state);
+    AXES.forEach((axis, i) => {
+      const v = axis.of(derived);
+      if (!Number.isFinite(v) || v <= 0) return;
+      spans[i].min = Math.min(spans[i].min, v);
+      spans[i].max = Math.max(spans[i].max, v);
+    });
+  }
+  return spans.map((s) => [s.min, s.max]);
+}
+
+// Axis positions for the current parameters. The figures span many orders of
+// magnitude, so each is placed on a log scale between the two extremes.
+function tradeoff(derived) {
+  return tradeoffSvg(AXES.map((axis, i) => {
+    const [min, max] = AXIS_SPANS[i];
+    const v = axis.of(derived);
+    const t = max > min ? (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min)) : 0.5;
+    return { label: axis.label, value: Math.min(1, Math.max(0, t)) };
+  }));
+}
+
+
+const scheme = {
   id: 'sphincs',
   title: 'SPHINCS+',
 
@@ -121,6 +211,11 @@ export default {
   },
 
   results: [
+    {
+      heading: 'Tradeoff diagram',
+      tradeoff,
+      rows: [],
+    },
     {
       heading: 'Hypertree',
       group: HT,
@@ -226,6 +321,8 @@ export default {
     blockSpace,
   ],
 };
+
+export default scheme;
 
 // Structure diagram: the d layers of the hypertree, with the FORS forest of
 // the selected bottom-layer leaf drawn beneath it.

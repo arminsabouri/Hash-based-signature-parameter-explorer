@@ -486,3 +486,15 @@ button.wots-digit { cursor: pointer; }
   border-bottom: 2px solid var(--group-color);
   border-radius: 0;
 }
+
+/* Tradeoff diagram in the results panel. */
+.tradeoff { display: block; width: 100%; max-width: 340px; margin: 0.25rem auto 0; overflow: visible; }
+.tradeoff .radar-grid { fill: none; stroke: var(--border-color); stroke-width: 1; opacity: 0.35; }
+.tradeoff .radar-spoke { stroke: var(--border-color); stroke-width: 1; opacity: 0.35; }
+.tradeoff .radar-shape {
+  fill: color-mix(in srgb, var(--c-ca6702) 30%, transparent);
+  stroke: var(--c-ca6702);
+  stroke-width: 2;
+}
+.tradeoff .radar-point { fill: var(--c-ca6702); }
+.tradeoff .radar-label { fill: var(--color); font-size: 10px; opacity: 0.85; }
