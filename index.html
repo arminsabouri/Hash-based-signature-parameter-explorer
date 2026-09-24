@@ -534,18 +534,18 @@
         </template>
       </ul>
     </template>
-    <template x-if="config.columns">
-      <dl class="column-heads">
-        <div class="result-row">
-          <dt></dt>
-          <template x-for="c in config.columns" :key="c">
-            <dd :style="`--group-color: ${config.groups[c]}`" x-text="c"></dd>
-          </template>
-        </div>
-      </dl>
-    </template>
     <template x-for="(group, g) in config.results" :key="g">
       <div x-show="!group.show || group.show(derived)" x-data="{ active: null }">
+        <template x-if="config.columns && g === headsIndex">
+          <dl class="column-heads">
+            <div class="result-row">
+              <dt></dt>
+              <template x-for="c in config.columns" :key="c">
+                <dd :style="`--group-color: ${config.groups[c]}`" x-text="c"></dd>
+              </template>
+            </div>
+          </dl>
+        </template>
         <template x-if="group.heading">
           <h4><span x-text="group.heading"></span>
             <template x-if="group.tooltip">

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import sphincs, { spans } from '../js/schemes/sphincs.js';
+import sphincs, { spans as sphincsSpans } from '../js/schemes/sphincs.js';
+import shrincs, { spans as shrincsSpans } from '../js/schemes/shrincs.js';
 import { initialState } from '../js/scheme.js';
 
 // The tradeoff diagram's axes are scaled against the extremes the parameter
@@ -10,6 +11,7 @@ import { initialState } from '../js/scheme.js';
 // match, and so catches a parameter range changing underneath them.
 
 const group = sphincs.results.find((g) => g.tradeoff);
+const shrincsGroup = shrincs.results.find((g) => g.tradeoff);
 
 // Kept here as well as in the source, so a change to either side has to be
 // made deliberately in both.
@@ -22,7 +24,7 @@ const PINNED_SPANS = [
 ];
 
 test('the pinned axis spans match a fresh walk of the parameter corners', () => {
-  assert.deepEqual(spans(), PINNED_SPANS);
+  assert.deepEqual(sphincsSpans(), PINNED_SPANS);
 });
 
 test('the pinned spans are the ones the diagram actually draws against', () => {
@@ -85,4 +87,38 @@ test('every axis position stays within the diagram', () => {
       assert.ok(Number.isFinite(n), `coordinate ${n} for ${JSON.stringify(state)}`);
     }
   }
+});
+
+// SHRINCS draws one series per signing path on shared axes.
+
+const SHRINCS_SPANS = [
+  [10, 343169],
+  [6.6158297076245084e-24, 0.012987012987012988],
+  [0.0000036825223805297676, 0.14285714285714285],
+  [6.615829707624109e-24, 0.011627906976744186],
+  [2, 4.562440617622195e+192],
+];
+
+test('the pinned SHRINCS axis spans match a fresh walk of the parameter corners', () => {
+  assert.deepEqual(shrincsSpans(), SHRINCS_SPANS);
+});
+
+test('SHRINCS draws both paths on the same axes', () => {
+  const { svg } = shrincsGroup.tradeoff(shrincs.derive(initialState(shrincs.parameters)));
+  const shapes = [...svg.matchAll(/<polygon points="([^"]*)" class="radar-shape"([^/]*)\/>/g)];
+  assert.equal(shapes.length, 2, 'one shape per signing path');
+  const colours = shapes.map((m) => m[2]);
+  assert.notEqual(colours[0], colours[1], 'the two paths are told apart by colour');
+  assert.ok(svg.includes('Stateful') && svg.includes('Stateless'), 'both are named in the legend');
+  // Key generation builds both components, so that axis is shared.
+  const radius = (points, i) => {
+    const rings = [...svg.matchAll(/<polygon points="([^"]*)" class="radar-grid"/g)];
+    const outer = rings[rings.length - 1][1].split(' ').map((p) => p.split(',').map(Number));
+    const cx = outer.reduce((a, [x]) => a + x, 0) / outer.length;
+    const cy = outer.reduce((a, [, y]) => a + y, 0) / outer.length;
+    const [x, y] = points.split(' ')[i].split(',').map(Number);
+    return Math.hypot(x - cx, y - cy);
+  };
+  assert.ok(Math.abs(radius(shapes[0][1], 3) - radius(shapes[1][1], 3)) < 1e-9,
+    'key generation is the same on both paths');
 });

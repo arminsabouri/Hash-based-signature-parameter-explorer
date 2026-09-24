@@ -5,6 +5,7 @@ import * as plainWots from '../primitives/wots.js';
 import { compressions } from '../sha256.js';
 import { approx, bytes, num } from '../scheme.js';
 import { blockSpace, hashCalls, hashCallsNote, withMidstate } from '../common-results.js';
+import { axisSpans, hashCallCount, tradeoffGroup } from '../tradeoff.js';
 import { drawForest, drawHypertree, drawTree, annotateTree, bracket, svg } from '../draw.js';
 
 // SHRINCS, which combines a stateful component (an FXMSS tree of WOTS+C
@@ -111,7 +112,46 @@ function stateless(state) {
 
 const dash = () => '—';
 
-export default {
+// The tradeoff diagram, one series per signing path, drawn on shared axes so
+// the two can be read against each other. Key generation builds both
+// components, so that figure is the same on either path. The axis endpoints
+// are pinned; `test/tradeoff.test.js` checks them against a fresh walk of the
+// parameter corners.
+const path = (name, color, of) => ({
+  name,
+  color,
+  metrics: (d) => {
+    const c = of(d);
+    return {
+      blockSpace: (c.sizes.sig + d.sizes.pk) / 8,
+      signCalls: hashCallCount(c.sign),
+      verifyCalls: hashCallCount(c.verify),
+      keygenCalls: hashCallCount(d.keygen),
+      budget: c.leaves,
+    };
+  },
+});
+
+const SERIES = [
+  path(SF, 'var(--c-0a9396)', (d) => d.sf),
+  path(SL, 'var(--c-ca6702)', (d) => d.sl),
+];
+
+// The knobs that tune the WOTS+C counter search, held at their defaults when
+// the endpoints are worked out.
+export const SEARCH_KEYS = ['sfZ', 'sfS', 'sfR'];
+
+const AXIS_SPANS = [
+  [10, 343169],
+  [6.6158297076245084e-24, 0.012987012987012988],
+  [0.0000036825223805297676, 0.14285714285714285],
+  [6.615829707624109e-24, 0.011627906976744186],
+  [2, 4.562440617622195e+192],
+];
+
+export const spans = () => axisSpans(scheme, SERIES, SEARCH_KEYS);
+
+const scheme = {
   id: 'shrincs',
   title: 'SHRINCS',
   columns: [SF, SL],
@@ -175,6 +215,7 @@ export default {
   },
 
   results: [
+    tradeoffGroup({ spans: AXIS_SPANS, series: SERIES }),
     {
       rows: [
         {
@@ -255,6 +296,8 @@ export default {
     },
   ],
 };
+
+export default scheme;
 
 // Structure diagram: the two components stacked, each under its own root, with
 // a bracket down the left spanning both to show that either one verifies.

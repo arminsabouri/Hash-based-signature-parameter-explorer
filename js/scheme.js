@@ -71,6 +71,12 @@ export function scheme(config) {
         .trim();
     },
 
+    // Where the column headings go: above the first group that has rows, so
+    // they are not stranded over a group that only draws a diagram.
+    get headsIndex() {
+      return config.results.findIndex((group) => group.rows && group.rows.length);
+    },
+
     tooltipId(...parts) {
       return [config.id, 'tip', ...parts].join('-');
     },
