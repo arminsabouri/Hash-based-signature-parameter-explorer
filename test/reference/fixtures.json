@@ -1,0 +1,515 @@
+{
+ "_comment": "Golden values under the CACHED hash convention (default: PK.seed midstate cached, Th2=1, ADRS_c=22B \u2014 see costs.sage HASH_CONVENTION). uncached_spot holds frozen values from real prior sage runs under the original uncached convention.",
+ "wots_len": {
+  "2": 136,
+  "4": 68,
+  "16": 35,
+  "32": 28,
+  "64": 24,
+  "128": 21,
+  "256": 18,
+  "65536": 10
+ },
+ "wots_len_wc": {
+  "16": 32,
+  "32": 26,
+  "64": 22,
+  "128": 19,
+  "256": 16,
+  "65536": 8
+ },
+ "swn": {
+  "16": 240,
+  "32": 403,
+  "64": 693,
+  "128": 1206,
+  "256": 2040,
+  "65536": 262140
+ },
+ "baseline": {
+  "role": "STANDARD baseline",
+  "size": 7856,
+  "kg": 292351,
+  "sg": 2218483,
+  "sv": 2155,
+  "sv_worst": 3891
+ },
+ "csv_rows": {
+  "all_size_capped_candidates.csv": 7571,
+  "all_unbound_candidates.csv": 25917
+ },
+ "stateless": {
+  "63,7,14,12,16": {
+   "role": "STANDARD baseline",
+   "size": 7856,
+   "kg": 292351,
+   "sg": 2218483,
+   "sv": 2155,
+   "sv_worst": 3891
+  },
+  "50,2,6,20,256": {
+   "role": "Smallest Signature",
+   "size": 3408,
+   "kg": 154820149247,
+   "sg": 309659172862,
+   "sv": 4780,
+   "sv_worst": 8860
+  },
+  "40,10,9,17,32": {
+   "role": "Fastest Keygen",
+   "size": 7728,
+   "kg": 14479,
+   "sg": 3683732,
+   "sv": 4627,
+   "sv_worst": 8657
+  },
+  "40,8,23,8,32": {
+   "role": "Fastest Signing",
+   "size": 7552,
+   "kg": 28959,
+   "sg": 249324,
+   "sv": 3792,
+   "sv_worst": 7016
+  },
+  "50,2,6,20,16": {
+   "role": "Fastest Verification",
+   "size": 3952,
+   "kg": 19159580671,
+   "sg": 38338035710,
+   "sv": 724,
+   "sv_worst": 1220
+  },
+  "40,2,18,20,16": {
+   "role": "Best C/Byte",
+   "size": 7824,
+   "kg": 598736895,
+   "sg": 1254096885,
+   "sv": 969,
+   "sv_worst": 1465
+  },
+  "45,5,10,13,16": {
+   "role": "Report Candidate 1",
+   "size": 5776,
+   "kg": 292351,
+   "sg": 1707512,
+   "sv": 1550,
+   "sv_worst": 2790
+  },
+  "45,5,8,16,16": {
+   "role": "Report Candidate 2 / UXMSS ref",
+   "size": 5712,
+   "kg": 292351,
+   "sg": 3034618,
+   "sv": 1546,
+   "sv_worst": 2786
+  },
+  "40,5,19,10,16": {
+   "role": "Balanced (min global X)",
+   "size": 6800,
+   "kg": 146175,
+   "sg": 789234,
+   "sv": 1617,
+   "sv_worst": 2857
+  },
+  "40,5,19,9,16": {
+   "role": "Case tuple",
+   "size": 6496,
+   "kg": 146175,
+   "sg": 760050,
+   "sv": 1598,
+   "sv_worst": 2838
+  },
+  "40,5,13,12,16": {
+   "role": "Case tuple 2",
+   "size": 6160,
+   "kg": 146175,
+   "sg": 890614,
+   "sv": 1575,
+   "sv_worst": 2815
+  },
+  "40,4,9,16,16": {
+   "role": "Normalized winner ref",
+   "size": 5344,
+   "kg": 584703,
+   "sg": 4108282,
+   "sv": 1286,
+   "sv_worst": 2278
+  },
+  "45,5,12,11,16": {
+   "role": "Regular-weighted ref",
+   "size": 5840,
+   "kg": 292351,
+   "sg": 1535479,
+   "sv": 1555,
+   "sv_worst": 2795
+  },
+  "45,5,10,13,64": {
+   "role": "w=64 spot (Candidate-1 analogue)",
+   "size": 4896,
+   "kg": 790527,
+   "sg": 4198392,
+   "sv": 4005,
+   "sv_worst": 7470
+  },
+  "45,5,10,13,128": {
+   "role": "w=128 spot (Candidate-1 analogue)",
+   "size": 4656,
+   "kg": 1379839,
+   "sg": 7144952,
+   "sv": 6885,
+   "sv_worst": 12920
+  },
+  "45,5,10,13,4": {
+   "role": "w=4 spot (Candidate-1 analogue)",
+   "size": 8416,
+   "kg": 148991,
+   "sg": 990712,
+   "sv": 790,
+   "sv_worst": 1285
+  },
+  "45,5,10,13,2": {
+   "role": "w=2 spot (Candidate-1 analogue)",
+   "size": 13856,
+   "kg": 157695,
+   "sg": 1034232,
+   "sv": 705,
+   "sv_worst": 1040
+  }
+ },
+ "stateful": {
+  "uxmss": {
+   "TW,16": {
+    "hsf": 255,
+    "sz_q1": 593,
+    "sz_max": 4657,
+    "kg": 146175,
+    "sg": 301,
+    "sg_cold": 145906,
+    "sv_max": 529,
+    "sv_max_worst": 777,
+    "state": 4096
+   },
+   "TW,32": {
+    "hsf": 255,
+    "sz_q1": 481,
+    "sz_max": 4545,
+    "kg": 231679,
+    "sg": 466,
+    "sg_cold": 231241,
+    "sv_max": 699,
+    "sv_max_worst": 1102,
+    "state": 4096
+   },
+   "TW,64": {
+    "hsf": 255,
+    "sz_q1": 417,
+    "sz_max": 4481,
+    "kg": 395263,
+    "sg": 784,
+    "sg_cold": 394504,
+    "sv_max": 1020,
+    "sv_max_worst": 1713,
+    "state": 4096
+   },
+   "TW,128": {
+    "hsf": 255,
+    "sz_q1": 369,
+    "sz_max": 4433,
+    "kg": 689919,
+    "sg": 1358,
+    "sg_cold": 688583,
+    "sv_max": 1596,
+    "sv_max_worst": 2803,
+    "state": 4096
+   },
+   "TW,256": {
+    "hsf": 255,
+    "sz_q1": 321,
+    "sz_max": 4385,
+    "kg": 1181183,
+    "sg": 2317,
+    "sg_cold": 1178887,
+    "sv_max": 2557,
+    "sv_max_worst": 4597,
+    "state": 4096
+   },
+   "WC,16": {
+    "hsf": 255,
+    "sz_q1": 549,
+    "sz_max": 4613,
+    "kg": 133631,
+    "sg": 342,
+    "sg_cold": 133452,
+    "sv_max": 507,
+    "sv_max_worst": 507,
+    "state": 4096
+   },
+   "WC,32": {
+    "hsf": 255,
+    "sz_q1": 453,
+    "sz_max": 4517,
+    "kg": 215039,
+    "sg": 552,
+    "sg_cold": 214752,
+    "sv_max": 668,
+    "sv_max_worst": 668,
+    "state": 4096
+   },
+   "WC,64": {
+    "hsf": 255,
+    "sz_q1": 389,
+    "sz_max": 4453,
+    "kg": 362239,
+    "sg": 938,
+    "sg_cold": 361763,
+    "sv_max": 957,
+    "sv_max_worst": 957,
+    "state": 4096
+   },
+   "WC,128": {
+    "hsf": 255,
+    "sz_q1": 341,
+    "sz_max": 4405,
+    "kg": 624383,
+    "sg": 1636,
+    "sg_cold": 623581,
+    "sv_max": 1471,
+    "sv_max_worst": 1471,
+    "state": 4096
+   },
+   "WC,256": {
+    "hsf": 255,
+    "sz_q1": 293,
+    "sz_max": 4357,
+    "kg": 1050111,
+    "sg": 2809,
+    "sg_cold": 1048819,
+    "sv_max": 2303,
+    "sv_max_worst": 2303,
+    "state": 4096
+   },
+   "TW,65536": {
+    "hsf": 255,
+    "sz_q1": 193,
+    "sz_max": 4257,
+    "kg": 167773183,
+    "sg": 327689,
+    "sg_cold": 167445509,
+    "sv_max": 327935,
+    "sv_max_worst": 590075,
+    "state": 4096
+   },
+   "WC,65536": {
+    "hsf": 255,
+    "sz_q1": 165,
+    "sz_max": 4229,
+    "kg": 134218751,
+    "sg": 398867,
+    "sg_cold": 134093327,
+    "sv_max": 262401,
+    "sv_max_worst": 262401,
+    "state": 4096
+   }
+  },
+  "xmssmt": {
+   "TW,20,1,16": {
+    "size": 899,
+    "kg": 598736895,
+    "sg": 11721,
+    "sg_cold": 598736626,
+    "sv": 294,
+    "sv_worst": 542,
+    "state": 1120
+   },
+   "WC,10,1,16": {
+    "size": 694,
+    "kg": 534527,
+    "sg": 5562,
+    "sg_cold": 534348,
+    "sv": 262,
+    "sv_worst": 262,
+    "state": 560
+   },
+   "TW,20,2,32": {
+    "size": 1235,
+    "kg": 926719,
+    "sg": 18566,
+    "sg_cold": 1853462,
+    "sv": 906,
+    "sv_worst": 1712,
+    "state": 1568
+   },
+   "WC,40,5,256": {
+    "size": 1961,
+    "kg": 1050111,
+    "sg": 166889,
+    "sg_cold": 5260483,
+    "sv": 10272,
+    "sv_worst": 10272,
+    "state": 3264
+   },
+   "TW,40,10,16": {
+    "size": 6261,
+    "kg": 9135,
+    "sg": 23141,
+    "sg_cold": 93754,
+    "sv": 2762,
+    "sv_worst": 5242,
+    "state": 7280
+   },
+   "TW,30,3,16": {
+    "size": 2180,
+    "kg": 584703,
+    "sg": 17431,
+    "sg_cold": 1754434,
+    "sv": 848,
+    "sv_worst": 1592,
+    "state": 2800
+   },
+   "TW,20,1,64": {
+    "size": 723,
+    "kg": 1619001343,
+    "sg": 31664,
+    "sg_cold": 1619000584,
+    "sv": 785,
+    "sv_worst": 1478,
+    "state": 1120
+   },
+   "WC,20,1,128": {
+    "size": 647,
+    "kg": 2557476863,
+    "sg": 50416,
+    "sg_cold": 2557476061,
+    "sv": 1236,
+    "sv_worst": 1236,
+    "state": 1120
+   },
+   "TW,20,1,65536": {
+    "size": 499,
+    "kg": 687198961663,
+    "sg": 13434969,
+    "sg_cold": 687198633989,
+    "sv": 327700,
+    "sv_worst": 589840,
+    "state": 1120
+   },
+   "WC,20,1,65536": {
+    "size": 471,
+    "kg": 549760008191,
+    "sg": 10884707,
+    "sg_cold": 549759882767,
+    "sv": 262166,
+    "sv_worst": 262166,
+    "state": 1120
+   }
+  }
+ },
+ "site_pool_count": 13742,
+ "variants": {
+  "W+C|44,4,8,16,16,240": {
+   "size": 4960,
+   "kg": 1069055,
+   "sg": 5849347,
+   "sv": 1185,
+   "sv_worst": 1185
+  },
+  "W+C|40,5,11,14,256,2040": {
+   "size": 4596,
+   "kg": 1050111,
+   "sg": 5794969,
+   "sv": 10441,
+   "sv_worst": 10441
+  },
+  "W+C|40,5,11,14,256,2840": {
+   "size": 4596,
+   "kg": 1050111,
+   "sg": 5941944,
+   "sv": 6441,
+   "sv_worst": 6441
+  },
+  "W+C_F+C|44,4,8,16,16,240": {
+   "size": 4688,
+   "kg": 1069055,
+   "sg": 5914880,
+   "sv": 1168,
+   "sv_worst": 1168
+  },
+  "W+C_F+C|40,5,11,14,256,2040": {
+   "size": 4356,
+   "kg": 1050111,
+   "sg": 5811349,
+   "sv": 10425,
+   "sv_worst": 10425
+  },
+  "W+C_F+C|20,2,10,15,256,2040": {
+   "size": 3160,
+   "kg": 4200447,
+   "sg": 9418194,
+   "sv": 4261,
+   "sv_worst": 4261
+  },
+  "W+C_P+FP|44,4,8,16,16,240": {
+   "size": 4464,
+   "kg": 1069055,
+   "sg": 6337159,
+   "sv": 1151,
+   "sv_worst": 1151
+  },
+  "W+C_P+FP|40,5,11,14,256,2040": {
+   "size": 4020,
+   "kg": 1050111,
+   "sg": 6237515,
+   "sv": 10401,
+   "sv_worst": 10401
+  },
+  "W+C_P+FP|24,2,8,16,16,240": {
+   "size": 3112,
+   "kg": 2138111,
+   "sg": 6337029,
+   "sv": 631,
+   "sv_worst": 631
+  }
+ },
+ "variant_pool_counts": {
+  "W+C": 6666,
+  "W+C_F+C": 7077,
+  "W+C_P+FP": 7746
+ },
+ "_comment_variants": "variants: frozen from a real `sage costs.sage` CSV run; variant_pool_counts: frozen from the mpmath-verified 2026-07-05 generation (0 security pass/fail flips on the canonical grid).",
+ "uncached_spot": {
+  "baseline": {
+   "size": 7856,
+   "kg": 292862,
+   "sg": 2279391,
+   "sv": 2387,
+   "sv_worst": 4123
+  },
+  "variant|W+C|44,4,8,16,16,240": {
+   "size": 4960,
+   "kg": 1071102,
+   "sg": 6381815,
+   "sv": 1357,
+   "sv_worst": 1357
+  },
+  "uxmss|TW,16": {
+   "hsf": 255,
+   "sz_q1": 593,
+   "sz_max": 4657,
+   "kg": 146430,
+   "sg": 301,
+   "sg_cold": 146161,
+   "state": 4096,
+   "sv_max": 784,
+   "sv_max_worst": 1032
+  }
+ },
+ "_comment_w_grid": "2026-08-07: w grid extended with 64 (l1=22, S_wn=693) and 128 (l1=19, S_wn=floor(19*127/2)=1206). csv_rows/site_pool_count recomputed by two independent local implementations (site JS sweep under node + tests/model.py sizes over the JS security-pass set); FORS security depends only on (h,k,a), so the security-pass set is unchanged from the mpmath-verified generation. Per-w capped pool: 16:2420 32:2913 64:3259 128:3542 256:3849.",
+ "_comment_w_grid_2026_08_21": "2026-08-21: w grid restricted to the SLH-DSA-compatible byte-aligned choices {2, 4, 16, 256} (lg_w = log2(w) must divide 8; FIPS 205 standardises w = 16): 32/64/128 dropped, 2/4 added. FORS security depends only on (h,k,a), so the security-pass set (6,479 (h,d,k,a) combos) is unchanged from the mpmath-verified generation; csv_rows/site_pool_count recomputed by the site JS sweep under node and cross-checked against tests/model.py (w=16/256 per-w counts reproduce the frozen 2026-08-07 values exactly). Per-w capped pool: 2:165 4:1136 16:2420 256:3849.",
+ "_comment_w_optional": "2026-08-21 (later): optional Winternitz extras added to the SPX pool behind an explorer checkbox \u2014 w in {32, 64} (non-byte-aligned, exploratory). Exported by export_site_data.sage sweep_spx_extra; the sweep CSVs, report and figures keep the core {2, 4, 16, 256} grid, so csv_rows are unchanged. site_pool_count covers core + extras; optional_pool_counts pins the per-w extras (both reproduce the frozen 2026-08-07 mpmath-verified counts exactly). A w = 65536 extreme mode existed briefly the same day and was removed as not meaningful.",
+ "_comment_signing": "2026-08-09: WOTS signing counts signer-side work only \u2014 chains are walked to the signature positions and the leaf compress (Thl) belongs to the verifier. Cold signing rebuilds sibling leaves; the top-layer/UXMSS root is the public key, so the signer's own leaf pk is never recomputed (one wots_pk subtracted for XMSS-MT, hsf*pk + hsf*Th2 bound for UXMSS).",
+ "optional_pool_counts": {
+  "32": 2913,
+  "64": 3259
+ },
+ "_comment_w_stateful": "2026-08-24: stateful grid extended with w = 65536 (lg_w = 16, two-byte digits): l1 = 8, WOTS-TW l = 10, WOTS+C S_wn = floor(8*65535/2) = 262140 (grinding search = 136,715 attempts, exact under BigInt/int). XMSS-MT and UXMSS sweeps now cover 2 OTS x 6 w; uxmss rows 10 -> 12. Fixture spots chosen with all values < 2^53 so the site-JS comparison stays exact. The stateless grid is unaffected."
+}
