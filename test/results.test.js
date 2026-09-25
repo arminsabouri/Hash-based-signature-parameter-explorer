@@ -91,3 +91,36 @@ test('every scheme declares the groups its rows and parameters refer to', () => 
     }
   }
 });
+
+// A parameter whose default is a function of the other parameters lists those
+// in `resetOn`, and js/scheme.js re-resolves the default when one of them
+// changes. A default that reads a key it does not declare goes stale instead,
+// which is easy to introduce by renaming a parameter: SHRINCS renames b and z
+// to sfB and sfZ, so its sfS has to override the default it inherits.
+test('every dynamic default declares the parameters it reads', () => {
+  for (const [id, scheme] of Object.entries(schemes)) {
+    const base = initialState(scheme.parameters);
+    for (const p of scheme.parameters) {
+      if (typeof p.default !== 'function') continue;
+
+      // Record the keys the default reads while it resolves.
+      const read = new Set();
+      p.default(new Proxy({ ...base }, {
+        get(target, key) {
+          if (typeof key === 'string') read.add(key);
+          return target[key];
+        },
+      }));
+
+      const declared = new Set(p.resetOn ?? []);
+      for (const key of read) {
+        if (key === p.key) continue; // a default may read its own current value
+        assert.ok(
+          declared.has(key),
+          `${id}: the default for ${p.key} reads ${key} but does not reset on it`,
+        );
+      }
+      assert.ok(read.size > 0, `${id}: the default for ${p.key} reads nothing`);
+    }
+  }
+});
