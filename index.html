@@ -416,6 +416,10 @@
         picks the leaf, the signer keeps no state, and the same FORS key pair can be selected more than once.
         The OTS is WOTS or WOTS+C, and the few-time signature is FORS or FORS+C.
       </p>
+      <p class="hint spec-link">
+        Specification:
+        <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.205.pdf" target="_blank" rel="noopener">SLH-DSA (FIPS 205)</a>
+      </p>
 
       <div class="explorer wide-results">
         <aside class="parameters" data-template="parameters-panel"></aside>
@@ -446,6 +450,10 @@
         <strong>\(\boldsymbol{\mathrm{pk\_seed} \,\|\, \mathrm{sl\_root} \,\|\, \mathrm{sf\_root}}\)</strong>,
         and the first byte of a signature, the indicator byte, tells the verifier which component signed.
         The parameters below start at the values given in the specification.
+      </p>
+      <p class="hint spec-link">
+        Specification:
+        <a href="https://github.com/SHRINCS/shrincs-bip/blob/main/SHRINCS.md" target="_blank" rel="noopener">SHRINCS</a>
       </p>
 
       <div class="explorer wide-results">
@@ -527,6 +535,7 @@
 
   <template id="results-panel">
     <h3>Results</h3>
+    <p class="hint">Worst case estimates.</p>
     <template x-if="config.groups && !config.columns">
       <ul class="group-legend">
         <template x-for="(color, name) in config.groups" :key="name">

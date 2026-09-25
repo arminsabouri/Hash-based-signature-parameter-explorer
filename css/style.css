@@ -76,6 +76,7 @@ h1 { margin: 1.5rem 0 1rem; }
 /* Scheme sections */
 .scheme { margin-top: 3rem; }
 .scheme-intro { max-width: 42rem; }
+.scheme-intro + .spec-link { margin: -0.5rem 0 1rem; }
 
 main:has(.scheme) { max-width: 80rem; }
 
@@ -121,6 +122,7 @@ main:has(.scheme) { max-width: 80rem; }
 .results dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 
 .hint { font-size: 0.8rem; }
+.results > .hint { margin: 0 0 0.75rem; }
 
 /* Lamport grid */
 .lamport-grid {
