@@ -36,7 +36,7 @@
     },
     show(id) {
       this.selected = id;
-      if (id !== 'sphincs') this.lastBlock = id;
+      if (this.blocks.includes(id)) this.lastBlock = id;
       history.replaceState(null, '', '#' + id);
     },
   }">
