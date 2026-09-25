@@ -18,7 +18,9 @@ signatures such as WOTS, few-time signatures such as FORS, and Merkle trees that
 combine them. Each exposes parameters. This site lets you adjust those
 parameters and see how they change signature size, public key size, signing and
 verification cost, statefulness, and signature budget, in terms of block space
-and transaction throughput. Figures can be cross-checked against the
+and transaction throughput. This site does not advocate for a particular
+post-quantum scheme. It exists to make the trade-offs between them easier to
+discuss. Figures can be cross-checked against the
 [SPHINCS-Parameters](https://github.com/BlockstreamResearch/SPHINCS-Parameters)
 scripts. Please note that all results are worst-case estimations. e.g
 un-balanced (BXMSS) tree assumes we are opening the last leaf.
