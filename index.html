@@ -52,7 +52,7 @@
         discrete logarithm problem and forge these signatures. Hash-based signature schemes rely only on
         properties of hash functions, which Bitcoin already depends on through SHA-256.
         <a href="https://eprint.iacr.org/2025/2203" target="_blank" rel="noopener">Hash-based Signature Schemes for Bitcoin</a>
-        (Kudinov and Nick) surveys these schemes and their parameter selection for Bitcoin, and
+        by Kudinov and Nick surveys these schemes and their parameter selection for Bitcoin, and
         <a href="https://github.com/SHRINCS/shrincs-bip/blob/main/SHRINCS.md" target="_blank" rel="noopener">SHRINCS</a>
         specifies a scheme that combines a stateful component with a stateless
         <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.205.pdf" target="_blank" rel="noopener">SLH-DSA (FIPS 205)</a>
@@ -65,7 +65,7 @@
         signing and verification cost, statefulness, and signature budget, in terms of block space and
         transaction throughput. Figures can be cross-checked against the
         <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
-        scripts.
+        scripts. Please note that all results are worst-case estimations. e.g un-balanced (BXMSS) tree assumes we are opening the last leaf. 
       </p>
     </section>
 
