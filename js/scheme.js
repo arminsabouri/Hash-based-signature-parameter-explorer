@@ -94,6 +94,10 @@ export function scheme(config) {
     // structure forces, since no spoke can be set on its own.
     drag: null,
 
+    // Which shape a drag grabs. Two shapes can put a vertex in the same place,
+    // so the choice is made with a control rather than by the pointer.
+    dragSeries: 0,
+
     // The pointer in the diagram's own coordinates, which the viewBox scales.
     tradeoffPoint(event) {
       const ctm = event.currentTarget.getScreenCTM();
@@ -104,8 +108,8 @@ export function scheme(config) {
     tradeoffGrab(group, event) {
       const at = this.tradeoffPoint(event);
       if (!at) return;
-      const drawn = group.tradeoff(this.derived);
-      const vertex = vertexAt(drawn, at.x, at.y);
+      const drawn = group.tradeoff(this.derived, this.dragSeries);
+      const vertex = vertexAt(drawn, at.x, at.y, this.dragSeries);
       if (!vertex) return;
       // Where every vertex sat when the drag began. The solver charges the ones
       // that are not being dragged for leaving it.
@@ -118,7 +122,7 @@ export function scheme(config) {
       if (!this.drag) return;
       const at = this.tradeoffPoint(event);
       if (!at) return;
-      const drawn = group.tradeoff(this.derived);
+      const drawn = group.tradeoff(this.derived, this.dragSeries);
       const free = config.parameters
         .filter((p) => p.type === 'range' && !group.hold.includes(p.key))
         .map((p) => p.key);

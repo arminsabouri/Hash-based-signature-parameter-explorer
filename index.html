@@ -602,13 +602,22 @@
             <p class="sig-bar-readout" x-katex="barReadout(group, active)"></p>
           </div>
         </template>
+        <template x-if="!!group.tradeoff && group.series.length > 1">
+          <div class="drag-series">
+            <span>Drag</span>
+            <template x-for="(s, i) in group.series" :key="s.name">
+              <button type="button" :aria-pressed="dragSeries === i" @click="dragSeries = i"
+                      :style="`--group-color: ${s.color}`" x-text="s.name"></button>
+            </template>
+          </div>
+        </template>
         <template x-if="!!group.tradeoff">
           <svg class="tradeoff" :class="drag && 'dragging'"
-               :view-box.camel="`0 0 ${group.tradeoff(derived).width} ${group.tradeoff(derived).height}`"
+               :view-box.camel="`0 0 ${group.tradeoff(derived, dragSeries).width} ${group.tradeoff(derived, dragSeries).height}`"
                @pointerdown="tradeoffGrab(group, $event)"
                @pointermove="tradeoffDrag(group, $event)"
                @pointerup="tradeoffRelease()" @pointercancel="tradeoffRelease()"
-               x-html="group.tradeoff(derived).svg" role="img"
+               x-html="group.tradeoff(derived, dragSeries).svg" role="img"
                aria-label="Tradeoff diagram of block space consumption, signature generation speed, verification speed, key generation speed and signing budget"></svg>
         </template>
         <dl>

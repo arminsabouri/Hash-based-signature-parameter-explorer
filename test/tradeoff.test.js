@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import sphincs, { spans as sphincsSpans } from '../js/schemes/sphincs.js';
 import shrincs, { spans as shrincsSpans } from '../js/schemes/shrincs.js';
 import { initialState } from '../js/scheme.js';
-import { clampState, placeOn, solveDrag } from '../js/tradeoff.js';
+import { clampState, placeOn, solveDrag, vertexAt } from '../js/tradeoff.js';
 
 // The tradeoff diagram's axes are scaled against the extremes the parameter
 // ranges can reach. Walking every corner is too slow to do on first paint, so
@@ -188,4 +188,44 @@ test('dragging one series in SHRINCS leaves the other shape anchored', () => {
   const other = Math.abs(after[1][2] - anchor[1][2]);
   assert.ok(pulled > 0, 'the dragged vertex moved');
   assert.ok(other <= pulled, `other series moved ${other} against ${pulled}`);
+});
+
+test('a drag grabs only the chosen shape when two are drawn', () => {
+  const state = initialState(shrincs.parameters);
+  const drawn = shrincsGroup.tradeoff(shrincs.derive(state));
+  assert.equal(drawn.shapes.length, 2, 'SHRINCS draws two shapes');
+  // Both shapes are searched when no series is named, and only the named one
+  // otherwise, which is what the control in the results panel picks.
+  for (const [series, shape] of drawn.shapes.entries()) {
+    shape.values.forEach((v, axis) => {
+      const r = drawn.radius * v;
+      const x = drawn.cx + r * Math.cos(drawn.angle(axis));
+      const y = drawn.cy + r * Math.sin(drawn.angle(axis));
+      assert.equal(vertexAt(drawn, x, y, series).series, series,
+        `series ${series} axis ${axis} grabbed the wrong shape`);
+      const other = vertexAt(drawn, x, y, 1 - series);
+      if (other) assert.equal(other.series, 1 - series, 'the other shape was searched');
+    });
+  }
+});
+
+test('the shape being dragged is drawn over the other one', () => {
+  const derived = shrincs.derive(initialState(shrincs.parameters));
+  const painted = (front) => [...shrincsGroup.tradeoff(derived, front).svg
+    .matchAll(/class="radar-shape" style="--shape-color: ([^"]*)"/g)].map((m) => m[1]);
+
+  // SVG has no z-index and paints in document order, so the series named as the
+  // front one has to come last.
+  for (const front of [0, 1]) {
+    const order = painted(front);
+    assert.equal(order.length, 2, 'both shapes are drawn');
+    assert.equal(order[1], shrincsGroup.series[front].color, `series ${front} is painted last`);
+  }
+  assert.notDeepEqual(painted(0), painted(1), 'the toggle changes the paint order');
+
+  // The legend keeps its order whichever shape is in front.
+  for (const front of [0, 1]) {
+    const svg = shrincsGroup.tradeoff(derived, front).svg;
+    assert.ok(svg.indexOf('Stateful') < svg.indexOf('Stateless'), `legend order with front ${front}`);
+  }
 });

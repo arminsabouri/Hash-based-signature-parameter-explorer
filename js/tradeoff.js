@@ -92,10 +92,13 @@ export const placeOn = (spans) => (metrics) => AXES.map((axis, i) => {
 
 // The vertex nearest a point, as a series and axis pair, or null when the point
 // is further than `within` from every vertex. `drawn` is what `tradeoffSvg`
-// returned, so the search runs over the radii actually on screen.
-export function vertexAt(drawn, x, y, within = 14) {
+// returned, so the search runs over the radii actually on screen. `only` names
+// the one series to search, since two shapes can put vertices on top of each
+// other and the pointer cannot say which was meant.
+export function vertexAt(drawn, x, y, only = null, within = 14) {
   let found = null;
   drawn.shapes.forEach((shape, s) => {
+    if (only !== null && s !== only) return;
     shape.values.forEach((v, i) => {
       const r = drawn.radius * v;
       const dx = x - (drawn.cx + r * Math.cos(drawn.angle(i)));
@@ -187,9 +190,12 @@ export function tradeoffGroup({ heading = 'Tradeoff diagram', spans, series, hol
     spans,
     series,
     hold,
-    tradeoff: (derived) => tradeoffSvg(
+    // `front` is the series drawn last, so the one being dragged is not hidden
+    // under the other.
+    tradeoff: (derived, front = null) => tradeoffSvg(
       AXES,
       series.map((s) => ({ name: s.name, color: s.color, values: place(s.metrics(derived)) })),
+      { front: series.length > 1 ? front : null },
     ),
     rows: [],
   };

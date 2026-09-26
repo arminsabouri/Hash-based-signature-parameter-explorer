@@ -519,6 +519,24 @@ button.wots-digit { cursor: pointer; }
   stroke-width: 2;
 }
 .tradeoff .radar-point { fill: var(--shape-color, var(--c-ca6702)); }
+/* Which shape a drag grabs, shown only where the diagram draws more than one. */
+.drag-series { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; }
+.drag-series button {
+  font: inherit;
+  color: var(--color);
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.drag-series button[aria-pressed="true"] {
+  opacity: 1;
+  border-color: var(--group-color);
+  box-shadow: inset 2px 0 0 var(--group-color);
+}
+
 /* The vertices are draggable, so the pointer says so over the diagram. */
 .tradeoff { cursor: grab; touch-action: none; }
 .tradeoff.dragging { cursor: grabbing; }

@@ -258,7 +258,7 @@ export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
 // optional name and colour; several named shapes get a legend underneath.
 // `label` on an axis is an array of lines placed outside the vertex. The first
 // axis points up and the rest follow clockwise.
-export function tradeoffSvg(axes, shapes, { radius = 68, rings = 4 } = {}) {
+export function tradeoffSvg(axes, shapes, { radius = 68, rings = 4, front = null } = {}) {
   const named = shapes.filter((s) => s.name).length;
   const W = 340, H = 226 + (named ? 18 : 0);
   const cx = W / 2, cy = 116;
@@ -275,7 +275,11 @@ export function tradeoffSvg(axes, shapes, { radius = 68, rings = 4 } = {}) {
     g.line(cx, cy, x, y, 'radar-spoke');
   });
 
-  for (const shape of shapes) {
+  // SVG has no z-index, so the shape named by `front` is drawn last to sit on
+  // top. The order of `shapes` itself is left alone, so the legend and the
+  // series indices a caller works with do not move.
+  const drawOrder = shapes.filter((_, i) => i !== front).concat(shapes[front] ?? []);
+  for (const shape of drawOrder) {
     const style = shape.color ? ` style="--shape-color: ${shape.color}"` : '';
     g.raw(`<polygon points="${shape.values.map((v, i) => at(i, radius * v).join(',')).join(' ')}"`
       + ` class="radar-shape"${style}/>`);
