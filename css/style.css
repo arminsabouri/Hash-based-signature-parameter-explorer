@@ -58,6 +58,12 @@ header { text-align: center; }
 
 h1 { margin: 1.5rem 0 1rem; }
 
+/* ?presentation swaps the title and the intro. The attribute is set in the head
+   before paint, so only one of each pair is ever drawn. */
+.presentation-only { display: none; }
+:root[data-variant="presentation"] .presentation-only { display: revert; }
+:root[data-variant="presentation"] .default-only { display: none; }
+
 .context {
   max-width: 42rem;
   margin: 0 auto;

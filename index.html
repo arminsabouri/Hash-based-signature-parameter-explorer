@@ -4,6 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hash Based Digital Signature Parameter Explorer</title>
+  <script>
+    // ?presentation swaps the title and the intro. Set here rather than in the
+    // Alpine component because that script is deferred, which would show the
+    // default copy for a frame first.
+    if (new URLSearchParams(location.search).has('presentation')) {
+      document.documentElement.dataset.variant = 'presentation';
+      document.title = 'Bitcoin Has a Post-Quantum Problem';
+    }
+  </script>
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/main.js"></script>
   <link rel="stylesheet"
@@ -37,16 +46,24 @@
     show(id) {
       this.selected = id;
       if (this.blocks.includes(id)) this.lastBlock = id;
-      history.replaceState(null, '', '#' + id);
+      history.replaceState(null, '', location.search + '#' + id);
     },
   }">
     <header>
-      <h1>Hash Based Digital Signature Parameter Explorer</h1>
+      <h1 class="default-only">Hash Based Digital Signature Parameter Explorer</h1>
+      <h1 class="presentation-only">Bitcoin Has a Post-Quantum Problem</h1>
     </header>
 
     <section class="context">
       <p class="section-label">// context</p>
-      <p>
+      <p class="presentation-only">
+        Bitcoin authorizes spending with ECDSA and Schnorr signatures, whose security rests on the
+        <strong>discrete logarithm problem</strong>. A <strong>cryptanalytically relevant quantum
+        computer</strong> would solve that problem and could <strong>forge those signatures</strong>,
+        spending coins it does not own. <strong>Hash-based signatures</strong> are one replacement, relying only on the
+        kind of hashing Bitcoin already uses, and the choices they involve are what this site lays out.
+      </p>
+      <p class="default-only">
         Bitcoin authorizes spending with ECDSA and Schnorr signatures over the secp256k1 curve.
         Shor's algorithm would allow a sufficiently large quantum computer to solve the elliptic curve
         discrete logarithm problem and forge these signatures. Hash-based signature schemes rely only on
@@ -58,7 +75,7 @@
         <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.205.pdf" target="_blank" rel="noopener">SLH-DSA (FIPS 205)</a>
         component.
       </p>
-      <p>
+      <p class="default-only">
         These schemes are assembled from a small set of building blocks: one-time signatures such as WOTS,
         few-time signatures such as FORS, and Merkle trees that combine them. Each exposes parameters.
         This site lets you adjust those parameters and see how they change signature size, public key size,
