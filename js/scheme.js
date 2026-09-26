@@ -4,9 +4,20 @@ import { clampState, radiusAt, solveDrag, vertexAt } from './tradeoff.js';
 // and `results`; the parameters and results panels render from it.
 export function scheme(config) {
   let cacheKey, cache;
+  const defaults = initialState(config.parameters);
   return {
     config,
-    state: initialState(config.parameters),
+    state: { ...defaults },
+
+    // Whether anything has been moved away from the defaults, which is when
+    // the reset control appears.
+    get changed() {
+      return config.parameters.some((p) => this.state[p.key] !== defaults[p.key]);
+    },
+
+    reset() {
+      this.state = { ...defaults };
+    },
 
     // Parameters can give `default`, `min`, and `max` as functions of the
     // other parameters, and list keys in `resetOn` that restore the default.

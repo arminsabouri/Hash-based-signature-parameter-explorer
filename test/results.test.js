@@ -124,3 +124,24 @@ test('every dynamic default declares the parameters it reads', () => {
     }
   }
 });
+
+test('a scheme starts on its defaults and returns to them after a reset', () => {
+  for (const [id, config] of Object.entries(schemes)) {
+    const start = initialState(config.parameters);
+    // The reset control appears only when something is off its default, so a
+    // freshly built state must compare equal to the defaults on every key.
+    for (const p of config.parameters) {
+      assert.equal(start[p.key], initialState(config.parameters)[p.key],
+        `${id}: ${p.key} is not stable across two builds of the defaults`);
+    }
+    // Every default has to be inside its own bounds, or a reset would land on
+    // a value the clamp immediately moves and the control would never clear.
+    for (const p of config.parameters) {
+      if (p.type !== 'range') continue;
+      const lo = resolve(p.min, start);
+      const hi = resolve(p.max, start);
+      assert.ok(start[p.key] >= lo && start[p.key] <= hi,
+        `${id}: the default for ${p.key} is ${start[p.key]}, outside ${lo}..${hi}`);
+    }
+  }
+});

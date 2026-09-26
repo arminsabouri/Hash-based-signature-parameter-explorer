@@ -487,7 +487,11 @@
 
   <!-- Panels shared by every scheme section, rendered from its config. -->
   <template id="parameters-panel">
-    <h3>Parameters</h3>
+    <h3>Parameters
+      <template x-if="changed">
+        <button type="button" class="reset" @click="reset()">Reset</button>
+      </template>
+    </h3>
     <template x-for="(p, i) in config.parameters" :key="p.key">
       <div x-show="!p.show || p.show(state)" :class="p.group && { grouped: true, 'group-start': p.group !== config.parameters[i - 1]?.group }"
            :style="p.group && `--group-color: ${config.groups[p.group]}`">

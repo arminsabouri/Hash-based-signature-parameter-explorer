@@ -95,6 +95,20 @@ main:has(.scheme) { max-width: 80rem; }
 }
 
 .explorer h3 { margin-top: 0; font-size: 1rem; }
+/* Sits on the Parameters heading, and only while something is off its default. */
+.reset {
+  float: right;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--color);
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.reset:hover, .reset:focus-visible { opacity: 1; border-color: var(--color); }
 .explorer h4 { margin: 1rem 0 0.25rem; font-size: 0.85rem; }
 
 .parameters label { display: block; margin-bottom: 1rem; }
