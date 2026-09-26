@@ -499,5 +499,8 @@ button.wots-digit { cursor: pointer; }
   stroke-width: 2;
 }
 .tradeoff .radar-point { fill: var(--shape-color, var(--c-ca6702)); }
+/* The vertices are draggable, so the pointer says so over the diagram. */
+.tradeoff { cursor: grab; touch-action: none; }
+.tradeoff.dragging { cursor: grabbing; }
 .tradeoff .radar-swatch { fill: var(--shape-color, var(--c-ca6702)); }
 .tradeoff .radar-label { fill: var(--color); font-size: 10px; opacity: 0.85; }

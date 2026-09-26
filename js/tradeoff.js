@@ -81,19 +81,112 @@ export function axisSpans(config, series, hold) {
   return spans.map((s) => [s.min, s.max]);
 }
 
-// A results group that draws the diagram. `spans` are the pinned endpoints.
-export function tradeoffGroup({ heading = 'Tradeoff diagram', spans, series }) {
-  // The figures span many orders of magnitude, so each sits on a log scale
-  // between its two endpoints.
-  const place = (metrics) => AXES.map((axis, i) => {
-    const [min, max] = spans[i];
-    const v = axis.of(metrics);
-    const t = max > min ? (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min)) : 0.5;
-    return Math.min(1, Math.max(0, t));
+// Where a figure sits on its spoke, in [0, 1]. The figures span many orders of
+// magnitude, so each sits on a log scale between its two pinned endpoints.
+export const placeOn = (spans) => (metrics) => AXES.map((axis, i) => {
+  const [min, max] = spans[i];
+  const v = axis.of(metrics);
+  const t = max > min ? (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min)) : 0.5;
+  return Math.min(1, Math.max(0, t));
+});
+
+// The vertex nearest a point, as a series and axis pair, or null when the point
+// is further than `within` from every vertex. `drawn` is what `tradeoffSvg`
+// returned, so the search runs over the radii actually on screen.
+export function vertexAt(drawn, x, y, within = 14) {
+  let found = null;
+  drawn.shapes.forEach((shape, s) => {
+    shape.values.forEach((v, i) => {
+      const r = drawn.radius * v;
+      const dx = x - (drawn.cx + r * Math.cos(drawn.angle(i)));
+      const dy = y - (drawn.cy + r * Math.sin(drawn.angle(i)));
+      const distance = Math.hypot(dx, dy);
+      if (distance <= within && (!found || distance < found.distance)) {
+        found = { series: s, axis: i, distance };
+      }
+    });
   });
+  return found;
+}
+
+// Where along a spoke a point falls, in [0, 1]: its distance from the centre
+// projected onto that spoke's direction.
+export function radiusAt(drawn, axis, x, y) {
+  const t = ((x - drawn.cx) * Math.cos(drawn.angle(axis))
+    + (y - drawn.cy) * Math.sin(drawn.angle(axis))) / drawn.radius;
+  return Math.min(1, Math.max(0, t));
+}
+
+// A dragged vertex weighs this much more than a vertex holding its place, so
+// the drag reaches the cursor when it can and the rest give way only as far as
+// the structure forces.
+const TARGET_WEIGHT = 8;
+
+// A spoke's radius is a one-way function of the parameters, so a dragged vertex
+// is placed by search rather than by inversion. `anchor` is the shape as it
+// stood when the drag began; every vertex but the dragged one is charged for
+// leaving it, which is what makes the rest of the shape respond to the drag
+// instead of being rearranged freely. The search is coordinate descent over the
+// free parameters, one step at a time, so it returns a state reachable from the
+// current one and not merely one that fits.
+export function solveDrag({
+  config, spans, series, free, target, anchor, state, steps = 40,
+}) {
+  const place = placeOn(spans);
+  const params = config.parameters.filter((p) => p.type === 'range' && free.includes(p.key));
+  const shape = (s) => series.map((one) => place(one.metrics(config.derive({ ...s }))));
+
+  const cost = (values) => {
+    let total = TARGET_WEIGHT * (values[target.series][target.axis] - target.radius) ** 2;
+    values.forEach((row, s) => row.forEach((v, i) => {
+      if (s !== target.series || i !== target.axis) total += (v - anchor[s][i]) ** 2;
+    }));
+    return total;
+  };
+
+  let best = state;
+  let bestCost = cost(shape(state));
+  for (let step = 0; step < steps; step++) {
+    let moved = false;
+    for (const p of params) {
+      for (const delta of [p.step, -p.step]) {
+        const next = clampState(config.parameters, { ...best, [p.key]: best[p.key] + delta });
+        if (next[p.key] === best[p.key]) continue;
+        const c = cost(shape(next));
+        if (c < bestCost - 1e-12) {
+          best = next;
+          bestCost = c;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  return best;
+}
+
+// Every range parameter pulled inside its bounds, which may depend on the
+// others. Shared with the component's own clamp so a searched state and a
+// dragged slider land on the same rules.
+export function clampState(parameters, state) {
+  const next = { ...state };
+  for (const p of parameters) {
+    if (p.type !== 'range') continue;
+    next[p.key] = Math.min(resolve(p.max, next), Math.max(resolve(p.min, next), next[p.key]));
+  }
+  return next;
+}
+
+// A results group that draws the diagram. `spans` are the pinned endpoints, and
+// `hold` names the parameters a drag leaves alone.
+export function tradeoffGroup({ heading = 'Tradeoff diagram', spans, series, hold = [] }) {
+  const place = placeOn(spans);
 
   return {
     heading,
+    spans,
+    series,
+    hold,
     tradeoff: (derived) => tradeoffSvg(
       AXES,
       series.map((s) => ({ name: s.name, color: s.color, values: place(s.metrics(derived)) })),

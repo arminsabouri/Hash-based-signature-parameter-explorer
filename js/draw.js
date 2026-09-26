@@ -307,5 +307,7 @@ export function tradeoffSvg(axes, shapes, { radius = 68, rings = 4 } = {}) {
       g.text(x + 16, H - 5, s.name, 'start', 'label radar-label');
     });
   }
-  return { svg: g.toString(), width: W, height: H };
+  // The geometry and the drawn radii come back out so a pointer position can
+  // be turned back into a spoke and a radius. See `vertexAt` in js/tradeoff.js.
+  return { svg: g.toString(), width: W, height: H, cx, cy, radius, angle, shapes };
 }

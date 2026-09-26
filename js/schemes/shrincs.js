@@ -215,7 +215,7 @@ const scheme = {
   },
 
   results: [
-    tradeoffGroup({ spans: AXIS_SPANS, series: SERIES }),
+    tradeoffGroup({ spans: AXIS_SPANS, series: SERIES, hold: ['n', ...SEARCH_KEYS] }),
     {
       rows: [
         {

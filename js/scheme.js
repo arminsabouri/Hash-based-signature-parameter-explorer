@@ -1,3 +1,5 @@
+import { clampState, radiusAt, solveDrag, vertexAt } from './tradeoff.js';
+
 // Generic scheme component. A scheme config supplies `parameters`, `derive`,
 // and `results`; the parameters and results panels render from it.
 export function scheme(config) {
@@ -20,10 +22,9 @@ export function scheme(config) {
     },
 
     clamp() {
+      const next = clampState(config.parameters, this.state);
       for (const p of config.parameters) {
-        if (p.type !== 'range') continue;
-        const v = Math.min(this.bound(p, 'max'), Math.max(this.bound(p, 'min'), this.state[p.key]));
-        if (v !== this.state[p.key]) this.state[p.key] = v;
+        if (next[p.key] !== this.state[p.key]) this.state[p.key] = next[p.key];
       }
     },
 
@@ -75,6 +76,58 @@ export function scheme(config) {
     // they are not stranded over a group that only draws a diagram.
     get headsIndex() {
       return config.results.findIndex((group) => group.rows && group.rows.length);
+    },
+
+    // A tradeoff vertex under the pointer, dragged. The dragged spoke follows
+    // the cursor and the rest of the shape moves with it as far as the
+    // structure forces, since no spoke can be set on its own.
+    drag: null,
+
+    // The pointer in the diagram's own coordinates, which the viewBox scales.
+    tradeoffPoint(event) {
+      const ctm = event.currentTarget.getScreenCTM();
+      if (!ctm) return null;
+      return new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
+    },
+
+    tradeoffGrab(group, event) {
+      const at = this.tradeoffPoint(event);
+      if (!at) return;
+      const drawn = group.tradeoff(this.derived);
+      const vertex = vertexAt(drawn, at.x, at.y);
+      if (!vertex) return;
+      // Where every vertex sat when the drag began. The solver charges the ones
+      // that are not being dragged for leaving it.
+      this.drag = { ...vertex, anchor: drawn.shapes.map((s) => s.values) };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    },
+
+    tradeoffDrag(group, event) {
+      if (!this.drag) return;
+      const at = this.tradeoffPoint(event);
+      if (!at) return;
+      const drawn = group.tradeoff(this.derived);
+      const free = config.parameters
+        .filter((p) => p.type === 'range' && !group.hold.includes(p.key))
+        .map((p) => p.key);
+      this.state = solveDrag({
+        config,
+        spans: group.spans,
+        series: group.series,
+        free,
+        anchor: this.drag.anchor,
+        state: this.state,
+        target: {
+          series: this.drag.series,
+          axis: this.drag.axis,
+          radius: radiusAt(drawn, this.drag.axis, at.x, at.y),
+        },
+      });
+    },
+
+    tradeoffRelease() {
+      this.drag = null;
     },
 
     tooltipId(...parts) {

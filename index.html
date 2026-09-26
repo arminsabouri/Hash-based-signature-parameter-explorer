@@ -63,9 +63,7 @@
         few-time signatures such as FORS, and Merkle trees that combine them. Each exposes parameters.
         This site lets you adjust those parameters and see how they change signature size, public key size,
         signing and verification cost, statefulness, and signature budget, in terms of block space and
-        transaction throughput. This site does not advocate for a particular post-quantum scheme.
-        It exists to make the trade-offs between them easier to discuss.
-        Figures can be cross-checked against the
+        transaction throughput. Figures can be cross-checked against the
         <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
         scripts. Please note that all results are worst-case estimations. e.g un-balanced (BXMSS) tree assumes we are opening the last leaf. 
       </p>
@@ -582,7 +580,11 @@
           </div>
         </template>
         <template x-if="!!group.tradeoff">
-          <svg class="tradeoff" :view-box.camel="`0 0 ${group.tradeoff(derived).width} ${group.tradeoff(derived).height}`"
+          <svg class="tradeoff" :class="drag && 'dragging'"
+               :view-box.camel="`0 0 ${group.tradeoff(derived).width} ${group.tradeoff(derived).height}`"
+               @pointerdown="tradeoffGrab(group, $event)"
+               @pointermove="tradeoffDrag(group, $event)"
+               @pointerup="tradeoffRelease()" @pointercancel="tradeoffRelease()"
                x-html="group.tradeoff(derived).svg" role="img"
                aria-label="Tradeoff diagram of block space consumption, signature generation speed, verification speed, key generation speed and signing budget"></svg>
         </template>

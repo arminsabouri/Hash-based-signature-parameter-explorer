@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import sphincs, { spans as sphincsSpans } from '../js/schemes/sphincs.js';
 import shrincs, { spans as shrincsSpans } from '../js/schemes/shrincs.js';
 import { initialState } from '../js/scheme.js';
+import { clampState, placeOn, solveDrag } from '../js/tradeoff.js';
 
 // The tradeoff diagram's axes are scaled against the extremes the parameter
 // ranges can reach. Walking every corner is too slow to do on first paint, so
@@ -121,4 +122,70 @@ test('SHRINCS draws both paths on the same axes', () => {
   };
   assert.ok(Math.abs(radius(shapes[0][1], 3) - radius(shapes[1][1], 3)) < 1e-9,
     'key generation is the same on both paths');
+});
+
+// Dragging a vertex. No spoke can be set on its own, so the check is that the
+// dragged one moves toward the cursor, that the others move only under that
+// pressure, and that the state the search lands on is one the sliders allow.
+
+const dragSetup = (scheme, results, axis, radius, seriesIndex = 0) => {
+  const state = initialState(scheme.parameters);
+  const place = placeOn(results.spans);
+  const anchor = results.series.map((s) => place(s.metrics(scheme.derive(state))));
+  const free = scheme.parameters
+    .filter((p) => p.type === 'range' && !results.hold.includes(p.key))
+    .map((p) => p.key);
+  const solved = solveDrag({
+    config: scheme,
+    spans: results.spans,
+    series: results.series,
+    free,
+    anchor,
+    state,
+    target: { series: seriesIndex, axis, radius },
+  });
+  const after = results.series.map((s) => place(s.metrics(scheme.derive(solved))));
+  return { state, solved, anchor, after, free };
+};
+
+test('dragging a vertex moves that spoke toward the cursor', () => {
+  for (const axis of [0, 1, 2, 3, 4]) {
+    for (const radius of [0, 1]) {
+      const { anchor, after } = dragSetup(sphincs, group, axis, radius);
+      const before = Math.abs(anchor[0][axis] - radius);
+      const now = Math.abs(after[0][axis] - radius);
+      assert.ok(now <= before, `axis ${axis} toward ${radius}: ${before} -> ${now}`);
+    }
+  }
+});
+
+test('dragging a vertex steps only the parameters the diagram leaves free', () => {
+  const { state, solved, free } = dragSetup(sphincs, group, 2, 1);
+  for (const [key, value] of Object.entries(solved)) {
+    if (value === state[key]) continue;
+    if (free.includes(key)) continue;
+    // A held parameter can still move, but only by following one that is free:
+    // its bound or its default is a function of the others, so a slider moved
+    // by hand would carry it along the same way.
+    const p = sphincs.parameters.find((one) => one.key === key);
+    const follows = ['min', 'max', 'default'].some((which) => typeof p[which] === 'function')
+      || (p.resetOn ?? []).some((dep) => free.includes(dep));
+    assert.ok(follows, `${key} moved but is held and depends on nothing free`);
+  }
+  assert.notDeepEqual(solved, state, 'the search moved something');
+});
+
+test('a dragged state stays inside the parameter bounds', () => {
+  const { solved } = dragSetup(sphincs, group, 2, 1);
+  assert.deepEqual(clampState(sphincs.parameters, solved), solved);
+});
+
+test('dragging one series in SHRINCS leaves the other shape anchored', () => {
+  // Both shapes read the same parameters, so the other one moves; the check is
+  // that it moves less than the one being dragged.
+  const { anchor, after } = dragSetup(shrincs, shrincsGroup, 2, 1, 0);
+  const pulled = Math.abs(after[0][2] - anchor[0][2]);
+  const other = Math.abs(after[1][2] - anchor[1][2]);
+  assert.ok(pulled > 0, 'the dragged vertex moved');
+  assert.ok(other <= pulled, `other series moved ${other} against ${pulled}`);
 });
