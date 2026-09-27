@@ -602,6 +602,9 @@
             <p class="sig-bar-readout" x-katex="barReadout(group, active)"></p>
           </div>
         </template>
+        <template x-if="!!group.tradeoff">
+          <p class="hint">Drag a vertex to change the parameters.</p>
+        </template>
         <template x-if="!!group.tradeoff && group.series.length > 1">
           <div class="drag-series">
             <span>Drag</span>
