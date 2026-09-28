@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import sphincs, { spans as sphincsSpans } from '../js/schemes/sphincs.js';
 import shrincs, { spans as shrincsSpans } from '../js/schemes/shrincs.js';
+import { spans as shrimpsSpans } from '../js/schemes/shrimps.js';
 import { initialState } from '../js/scheme.js';
 import { clampState, placeOn, solveDrag, vertexAt } from '../js/tradeoff.js';
 
@@ -102,6 +103,18 @@ const SHRINCS_SPANS = [
 
 test('the pinned SHRINCS axis spans match a fresh walk of the parameter corners', () => {
   assert.deepEqual(shrincsSpans(), SHRINCS_SPANS);
+});
+
+const SHRIMPS_SPANS = [
+  [8, 343136],
+  [3.3858550252753835e-12, 0.012987012987012988],
+  [0.000003682508819608623, 0.1],
+  [5.643043292663114e-11, 0.011494252873563218],
+  [2, 4.562440617622195e+192],
+];
+
+test('the pinned SHRIMPS axis spans match a fresh walk of the parameter corners', () => {
+  assert.deepEqual(shrimpsSpans(), SHRIMPS_SPANS);
 });
 
 test('SHRINCS draws both paths on the same axes', () => {

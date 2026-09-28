@@ -124,7 +124,7 @@ const variantState = ({ h, d, k, a, w, swn, hp, scheme }) => ({
 test('SPHINCS+ with WOTS+C matches the reference variants', () => {
   for (const [key, want] of Object.entries(fixtures.variants)) {
     const v = variant(key);
-    if (v.scheme !== 'W+C' || !inRange(v.w)) continue; // PORS+FP is not built
+    if (v.scheme !== 'W+C' || !inRange(v.w)) continue; // PORS+FP: test/shrimps.test.js
     const d0 = derive(sphincs, variantState(v));
     assert.equal(bytes(d0.sizes.sig), want.size, `${key} signature`);
     assert.equal(d0.keygenCompressions - MIDSTATE, want.kg, `${key} key generation`);

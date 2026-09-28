@@ -508,6 +508,8 @@ button.wots-digit { cursor: pointer; }
   border-bottom: 2px solid var(--group-color);
   border-radius: 0;
 }
+/* Headings longer than a value column, such as SHRIMPS's, wrap within it. */
+.results.two-columns .column-heads dd { white-space: normal; align-self: end; }
 
 /* Tradeoff diagram in the results panel. */
 .tradeoff { display: block; width: 100%; max-width: 340px; margin: 0.25rem auto 0; overflow: visible; }

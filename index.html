@@ -40,7 +40,7 @@
     lastBlock: 'lamport',
     init() {
       const id = location.hash.slice(1);
-      if (id === 'sphincs' || id === 'shrincs' || this.blocks.includes(id)) this.selected = id;
+      if (id === 'sphincs' || id === 'shrincs' || id === 'shrimps' || this.blocks.includes(id)) this.selected = id;
       if (this.blocks.includes(id)) this.lastBlock = id;
     },
     show(id) {
@@ -93,6 +93,8 @@
               @click="show('sphincs')">SPHINCS+</button>
       <button type="button" role="tab" :aria-selected="selected === 'shrincs'"
               @click="show('shrincs')">SHRINCS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'shrimps'"
+              @click="show('shrimps')">SHRIMPS</button>
       <button type="button" role="tab" :aria-selected="blocks.includes(selected)"
               @click="show(lastBlock)">Building Blocks</button>
     </nav>
@@ -485,6 +487,43 @@
           <p class="hint">The stateful component above and the stateless component below. A stateful
             signature is checked against \(\mathrm{sf\_root}\), a stateless one against
             \(\mathrm{sl\_root}\).</p>
+        </div>
+
+        <aside class="results two-columns" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('shrimps')" x-show="selected === 'shrimps'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        SHRIMPS combines two SPHINCS+ instances under a single public key, which is a hash of the public keys of
+        both instances. The <strong>compact</strong> instance is parameterized for
+        <strong>\(\boldsymbol{q_s = n_{\text{dev}} \cdot n_{\text{dsig}}}\)</strong> signatures, where
+        \(n_{\text{dev}}\) is an upper bound on the number of device initializations and \(n_{\text{dsig}}\) the
+        number of signatures each device makes through it; the <strong>fallback</strong> instance has a large
+        \(q_s\). A device loaded from the seed derives both key pairs and keeps per-key state: it signs through the
+        compact instance until it has made \(n_{\text{dsig}}\) signatures, then through the fallback instance.
+        A signature is a SPHINCS+ signature under the selected instance and the public key of the other instance,
+        the sibling public key. The compact parameters below start at \((k, a, h, d) = (8, 17, 12, 1)\),
+        \(w = 16\), \(S_{w,n} = 240\) with WOTS+C and PORS+FP, a row of the post's table, and the fallback
+        parameters at SLH-DSA-SHA2-128s.
+      </p>
+      <p class="hint spec-link">
+        Source:
+        <a href="https://delvingbitcoin.org/t/shrimps-2-5-kb-post-quantum-signatures-across-multiple-stateful-devices/2355" target="_blank" rel="noopener">SHRIMPS (Delving Bitcoin)</a>
+      </p>
+
+      <div class="explorer wide-results">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="shrimpsDiagram">
+          <h3>Visualization</h3>
+
+          <div data-template="tree-diagram"></div>
+
+          <p class="hint">The compact instance above and the fallback instance below. Under the compact
+            instance's selected bottom-layer leaf sits one PORS+FP tree of \(t = k \cdot 2^a\) secret leaves, of
+            which a signature reveals \(k\); under the fallback instance's sits a FORS key pair.</p>
         </div>
 
         <aside class="results two-columns" data-template="results-panel"></aside>

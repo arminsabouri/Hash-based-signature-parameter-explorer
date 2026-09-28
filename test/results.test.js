@@ -10,8 +10,9 @@ import fxmss from '../js/schemes/fxmss.js';
 import fors from '../js/schemes/fors.js';
 import sphincs from '../js/schemes/sphincs.js';
 import shrincs from '../js/schemes/shrincs.js';
+import shrimps from '../js/schemes/shrimps.js';
 
-const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, sphincs, shrincs };
+const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, sphincs, shrincs, shrimps };
 
 // Every row the results panel can show must produce a printable value. A row
 // that throws, or renders NaN or undefined, breaks the whole panel, so this

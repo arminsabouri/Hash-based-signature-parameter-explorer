@@ -7,8 +7,9 @@ import fxmss, { fxmssTree } from './schemes/fxmss.js';
 import fors, { forsForest } from './schemes/fors.js';
 import sphincs, { sphincsDiagram } from './schemes/sphincs.js';
 import shrincs, { shrincsDiagram } from './schemes/shrincs.js';
+import shrimps, { shrimpsDiagram } from './schemes/shrimps.js';
 
-const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, sphincs, shrincs };
+const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, sphincs, shrincs, shrimps };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.
@@ -36,4 +37,5 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('forsForest', forsForest);
   Alpine.data('sphincsDiagram', sphincsDiagram);
   Alpine.data('shrincsDiagram', shrincsDiagram);
+  Alpine.data('shrimpsDiagram', shrimpsDiagram);
 });
