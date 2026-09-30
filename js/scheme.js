@@ -22,6 +22,29 @@ export function scheme(config) {
     // Parameters can give `default`, `min`, and `max` as functions of the
     // other parameters, and list keys in `resetOn` that restore the default.
     init() {
+      // A shared link opens this scheme with the parameters it carries. They
+      // are applied before the watchers exist, so a dependent parameter keeps
+      // the value in the link rather than being reset to its default.
+      if (location.hash.slice(1) === config.id) {
+        this.state = clampState(config.parameters, { ...defaults, ...stateFromQuery(config.parameters, location.search) });
+      }
+
+      // The parameters that differ from the defaults go in the query string
+      // while this scheme is the one shown, so the address can be shared.
+      // Writes are spaced out, since a drag changes the state on every move
+      // and browsers throttle rapid history updates.
+      let pending;
+      const writeUrl = () => {
+        clearTimeout(pending);
+        pending = setTimeout(() => {
+          if (this.selected !== config.id) return;
+          const search = stateToQuery(config.parameters, this.state, defaults, location.search);
+          history.replaceState(null, '', `${location.pathname}${search}#${config.id}`);
+        }, 150);
+      };
+      this.$watch('state', writeUrl);
+      this.$watch('selected', writeUrl);
+
       for (const p of config.parameters) {
         for (const key of p.resetOn ?? []) {
           this.$watch(`state.${key}`, () => {
@@ -156,6 +179,44 @@ export function scheme(config) {
 
 function resolve(value, state) {
   return typeof value === 'function' ? value(state) : value;
+}
+
+// Query entries that are not parameters, kept when the parameters are written.
+const KEPT_QUERY = ['presentation'];
+
+// The query string for a shared link: every parameter that differs from its
+// default, by key. Of what `search` already holds, only the entries in
+// KEPT_QUERY stay, so another scheme's parameters are dropped with it.
+export function stateToQuery(parameters, state, defaults, search = '') {
+  const params = new URLSearchParams(search);
+  for (const key of [...params.keys()]) if (!KEPT_QUERY.includes(key)) params.delete(key);
+  for (const p of parameters) {
+    if (state[p.key] !== defaults[p.key]) params.set(p.key, String(state[p.key]));
+  }
+  // A flag with no value, such as ?presentation, is written back without "=".
+  const query = params.toString().replace(/=(?=&|$)/g, '');
+  return query ? `?${query}` : '';
+}
+
+// The parameters a query string sets, each read as its type allows. A value
+// that is not a number, a checkbox value other than true or false, or a select
+// value that is not one of its options is left out, so the default stands.
+export function stateFromQuery(parameters, search) {
+  const params = new URLSearchParams(search);
+  const state = {};
+  for (const p of parameters) {
+    if (!params.has(p.key)) continue;
+    const raw = params.get(p.key);
+    if (p.type === 'range') {
+      const value = Number(raw);
+      if (raw !== '' && Number.isFinite(value)) state[p.key] = value;
+    } else if (p.type === 'checkbox') {
+      if (raw === 'true' || raw === 'false') state[p.key] = raw === 'true';
+    } else if (p.type === 'select') {
+      if (p.options.includes(raw)) state[p.key] = raw;
+    }
+  }
+  return state;
 }
 
 export function initialState(parameters) {
