@@ -19,7 +19,7 @@ export const compressionsTooltip = 'An \\(L\\)-byte input costs \\(\\lceil (L+9)
 
 // For schemes that also hash the message with PRF_msg and H_msg. `digest`
 // describes a non-default digest length.
-export const messageCompressionsTooltip = (digest = '') => `An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. \\(\\mathrm{Th}\\) and \\(\\mathbf{PRF}\\) follow FIPS 205 with a cached \\(\\mathrm{PK.seed}\\) block, adding one compression per operation. \\(\\mathbf{PRF}_{\\mathbf{msg}}\\) and \\(\\mathbf{H}_{\\mathbf{msg}}\\) follow FIPS 205 for a 32-byte message${digest}.`;
+export const messageCompressionsTooltip = (digest = '') => `An \\(L\\)-byte input costs \\(\\lceil (L+9)/64 \\rceil\\) compressions. Hash calls follow FIPS 205 with a cached \\(\\mathrm{PK.seed}\\) block, adding one compression per call. \\(\\mathbf{PRF}_{\\mathbf{msg}}\\) and \\(\\mathbf{H}_{\\mathbf{msg}}\\) follow FIPS 205 for a 32-byte message${digest}.`;
 
 export const messageHashNote = 'Signing also computes \\(\\mathbf{PRF}_{\\mathbf{msg}}\\) and \\(\\mathbf{H}_{\\mathbf{msg}}\\); verification computes \\(\\mathbf{H}_{\\mathbf{msg}}\\).';
 
@@ -93,7 +93,7 @@ export const otsSearch = (tooltip) => ({
 // A hash call is one PRF or one Th. Both take a tweaked input of the same
 // shape and cost the same, so they are counted together.
 export const hashCalls = (c, fmt = approx) => fmt((c.prf ?? 0) + (c.th ?? 0));
-export const hashCallsNote = 'Counts \\(\\mathbf{PRF}\\) and \\(\\mathrm{Th}\\) calls together.';
+export const hashCallsNote = 'Counts \\(\\mathbf{PRF}\\) calls as hash calls.';
 
 // Hash calls and compressions for key generation, signing without and with
 // a cache (`cached` names what is cached), and verification.

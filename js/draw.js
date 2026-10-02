@@ -127,13 +127,13 @@ export function chainCells(w, digit) {
 }
 
 // A leaf at (leafX, leafY) opened up into its l chains of w values, whose
-// ends Th compresses into the leaf. `notes` are extra label lines under the
+// ends one hash call compresses into the leaf. `notes` are extra label lines under the
 // leaf label, and `compact` draws only the first and last chains. Returns the bottom of the drawing, labels included.
 export function drawLeafChains(g, { leafX, leafY, l, w, notes = [], compact = false }) {
   const top = leafY + 46 + 20 * notes.length;
   const busY = top - 16;
   g.line(leafX, leafY + 7, leafX, busY, 'ots-edge');
-  g.text(leafX + 8, leafY + 26, 'WOTS+C public key = Th(pk\u2081, \u2026, pk\u2097)', 'start', 'label ots-label');
+  g.text(leafX + 8, leafY + 26, 'WOTS+C public key = hash call on pk\u2081, \u2026, pk\u2097', 'start', 'label ots-label');
   notes.forEach((note, k) => g.text(leafX + 8, leafY + 40 + 14 * k, note, 'start', 'label ots-label'));
   const chains = drawChains(g, { l, w, left: 120, top, compact });
   const endsX = chains.right + 24;

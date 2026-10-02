@@ -89,7 +89,7 @@ export default {
     {
       heading: 'Hash calls',
       show: plusC,
-      tooltip: `Signing computes chain \\(i\\) up to position \\(a_i\\), \\(S_{w,n}\\) steps in total, plus one \\(\\mathrm{Th}\\) per search trial. Verification recomputes the digest once and takes \\(l(w-1) - S_{w,n}\\) steps for every message. ${hashCallsNote}`,
+      tooltip: `Signing computes chain \\(i\\) up to position \\(a_i\\), \\(S_{w,n}\\) steps in total, plus one hash call per search trial. Verification recomputes the digest once and takes \\(l(w-1) - S_{w,n}\\) steps for every message. ${hashCallsNote}`,
       rows: [
         { label: 'Key generation', value: (d) => hashCalls(d.keygen, num) },
         { label: 'Signing (WC search)', value: (d) => hashCalls(d.sign) },

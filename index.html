@@ -118,8 +118,7 @@
         For each of the \(n\) message bits the signer holds two secret values, \(sk_{i,0}\) and \(sk_{i,1}\),
         and publishes their hashes as the public key. Signing reveals, for each bit \(m_i\), the secret
         value <strong>\(\boldsymbol{sk_{i,m_i}}\)</strong>. The verifier hashes each revealed value and compares it with
-        <strong>\(\boldsymbol{pk_{i,m_i}}\)</strong>. All hashing uses a tweakable hash function <strong>\(\boldsymbol{\mathbf{Th}(P, (i, b), \cdot)}\)</strong>, which binds each
-        public key element to its position \((i, b)\) through a public parameter \(P\) and a tweak.
+        <strong>\(\boldsymbol{pk_{i,m_i}}\)</strong>.
       </p>
 
       <div class="explorer">
@@ -139,7 +138,7 @@
               <div class="cell label">\(m_i\)</div>
               <div class="cell label">\(sk_{i,0}\)</div>
               <div class="cell label">\(sk_{i,1}\)</div>
-              <div class="cell label arrow">\(\mathrm{Th}\)</div>
+              <div class="cell label arrow">Hash call</div>
               <div class="cell label">\(pk_{i,0}\)</div>
               <div class="cell label">\(pk_{i,1}\)</div>
             </div>
@@ -177,15 +176,15 @@
       <p class="scheme-intro" x-show="!state.plusC">
         WOTS signs an \(n\)-bit message with hash chains. The message is written as \(\mathrm{len}_1\)
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
-        <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and applies \(\mathrm{Th}\)
-        \(w - 1\) times to reach \(pk_i\). The signature reveals the value at position <strong>\(\boldsymbol{b_i}\)</strong> of each chain, and
+        <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and takes
+        \(w - 1\) hash calls to reach \(pk_i\). The signature reveals the value at position <strong>\(\boldsymbol{b_i}\)</strong> of each chain, and
         the verifier completes the remaining <strong>\(\boldsymbol{w - 1 - b_i}\)</strong> steps. Any other message has at least one digit lower
         than in the signed one, so a forgery needs a chain value earlier than the one revealed.
       </p>
 
       <p class="scheme-intro" x-show="state.plusC">
         WOTS+C replaces the checksum chains of WOTS with a search. The signer increments a counter until the
-        digest <strong>\(\boldsymbol{d = \mathbf{Th}(P, T^*, m \,\|\, \mathbf{count})}\)</strong>, written as \(\mathrm{len}_1\) base-\(w\)
+        digest <strong>\(\boldsymbol{d}\)</strong>, one hash call on \(m \,\|\, \mathbf{count}\), written as \(\mathrm{len}_1\) base-\(w\)
         digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
         \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
         values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
@@ -328,8 +327,8 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
-            Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
+          <p class="hint">Each leaf is a WOTS+C public key: one hash call compresses the ends of its \(l\) chains.
+            Each inner node is one hash call on its two children, and the root is the public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
@@ -356,8 +355,8 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
-            Each inner node is \(\mathrm{Th}\) of its two children. Layers are numbered from the bottom, and the
+          <p class="hint">Each leaf is a WOTS+C public key: one hash call compresses the ends of its \(l\) chains.
+            Each inner node is one hash call on its two children. Layers are numbered from the bottom, and the
             top-layer root is the public key.</p>
         </div>
 
@@ -386,8 +385,8 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">Each leaf is a WOTS+C public key: \(\mathrm{Th}\) compresses the ends of its \(l\) chains.
-            Each inner node is \(\mathrm{Th}\) of its two children, and the root is the public key.</p>
+          <p class="hint">Each leaf is a WOTS+C public key: one hash call compresses the ends of its \(l\) chains.
+            Each inner node is one hash call on its two children, and the root is the public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
@@ -398,8 +397,8 @@
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
         FORS (Forest of Random Subsets) is a few-time signature: <strong>\(\boldsymbol{k}\)</strong> Merkle trees of
-        height <strong>\(\boldsymbol{a}\)</strong> whose leaves are secret values, with the public key a
-        \(\mathrm{Th}\) of the \(k\) roots. The randomized message digest is split into \(k\) indices of \(a\) bits,
+        height <strong>\(\boldsymbol{a}\)</strong> whose leaves are secret values, with the public key one
+        hash call on the \(k\) roots. The randomized message digest is split into \(k\) indices of \(a\) bits,
         and the signature reveals the indexed leaf of each tree with its authentication path. Each signature
         reveals \(k\) more leaves, so the probability of a forgery grows with the number of signatures
         <strong>\(\boldsymbol{q}\)</strong>. FORS+C grinds a counter until the last tree's index is 0, which removes
@@ -448,9 +447,9 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">Each hypertree leaf is an OTS public key, and each inner node is \(\mathrm{Th}\) of its
+          <p class="hint">Each hypertree leaf is an OTS public key, and each inner node is one hash call on its
             two children. Under the selected bottom-layer leaf sits its FORS key pair: \(k\) trees of
-            \(2^a\) secret leaves whose roots \(\mathrm{Th}\) compresses into the FORS public key.</p>
+            \(2^a\) secret leaves whose roots one hash call compresses into the FORS public key.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>

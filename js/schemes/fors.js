@@ -136,7 +136,7 @@ function forestSvg(k, a, plusC) {
   const g = svg();
   const forest = drawForest(g, {
     k, a, plusC, left: 40, right: W - 120, top: 30, bx: W - 100,
-    pkLabel: 'FORS public key = Th(root\u2081, \u2026, root\u2096)',
+    pkLabel: 'FORS public key = hash call on root\u2081, \u2026, root\u2096',
   });
   return { svg: g.toString(), width: W, height: forest.bottom };
 }
