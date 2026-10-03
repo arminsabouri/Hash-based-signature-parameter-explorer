@@ -40,7 +40,7 @@
     lastBlock: 'lamport',
     init() {
       const id = location.hash.slice(1);
-      if (id === 'sphincs' || id === 'shrincs' || id === 'shrimps' || this.blocks.includes(id)) this.selected = id;
+      if (id === 'sphincs' || id === 'shrincs' || this.blocks.includes(id)) this.selected = id;
       if (this.blocks.includes(id)) this.lastBlock = id;
     },
     show(id) {
@@ -93,8 +93,7 @@
               @click="show('sphincs')">SPHINCS+</button>
       <button type="button" role="tab" :aria-selected="selected === 'shrincs'"
               @click="show('shrincs')">SHRINCS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'shrimps'"
-              @click="show('shrimps')">SHRIMPS</button>
+      <!-- SHRIMPS is disabled for now. Restore this tab and its id in init to show it. -->
       <button type="button" role="tab" :aria-selected="blocks.includes(selected)"
               @click="show(lastBlock)">Building Blocks</button>
     </nav>
