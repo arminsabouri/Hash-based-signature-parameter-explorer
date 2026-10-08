@@ -10,54 +10,18 @@ import { newSeed, seeded, treeModel, treeParameters, treeResults } from './hg-wo
 const LEAF = 'HagGrid';
 const BOTTOM = 'Bottom group';
 const TREE = 'HGT';
-const MAX_LEVELS = 4;
-const level = (i) => `Level ${i}`;
 
-// A leaf in the shape js/primitives/hg-wots.js takes, levels top first.
+// A leaf in the shape js/primitives/hg-wots.js takes: `levels` levels of the
+// same shape over a bottom group.
 export const leafOf = (s) => ({
-  levels: Array.from({ length: s.levels }, (_, i) => ({
-    units: s[`u${i + 1}`], open: 1, length: s[`l${i + 1}`], sum: s[`h${i + 1}`],
-  })),
+  levels: Array.from({ length: s.levels }, () => ({ units: s.u, open: 1, length: s.l, sum: s.h })),
   bottom: { chains: s.c, length: s.bw, sum: s.bs },
 });
-
-function levelParameters(i) {
-  const group = level(i);
-  const show = (s) => s.levels >= i;
-  const [u, l, h] = [`u${i}`, `l${i}`, `h${i}`];
-  return [
-    {
-      key: u, type: 'range', min: 2, step: 1, default: 4, group, show,
-      max: (s) => Math.min(8, hg.maxCount(s[l]) + 1),
-      label: 'Units',
-      tooltip: 'Units at this level. The signature opens one and sends one node on the chain of each of the others.',
-    },
-    {
-      key: l, type: 'range', min: 2, max: 16, step: 1, default: 16, group, show,
-      label: 'Chain length',
-      tooltip: 'Values on the chain of each unit at this level, its end included. The verifier walks the opened unit\'s chain from its start.',
-    },
-    {
-      key: h, type: 'range', min: 0, step: 1, default: 15, group, show,
-      max: (s) => (s[u] - 1) * (s[l] - 1),
-      label: 'Distance sum over hidden units',
-      tooltip: 'The distances from the nodes of the hidden units to their chain ends sum to this. The verifier walks them.',
-    },
-  ];
-}
 
 const haggrid = {
   id: 'haggrid',
   title: 'HGT + HagGrid',
-  groups: {
-    [LEAF]: 'var(--c-ca6702)',
-    [level(1)]: 'var(--c-ee9b00)',
-    [level(2)]: 'var(--c-bb3e03)',
-    [level(3)]: 'var(--c-ae2012)',
-    [level(4)]: 'var(--c-9b2226)',
-    [BOTTOM]: 'var(--c-94d2bd)',
-    [TREE]: 'var(--c-0a9396)',
-  },
+  groups: { [LEAF]: 'var(--c-ca6702)', [BOTTOM]: 'var(--c-94d2bd)', [TREE]: 'var(--c-0a9396)' },
 
   parameters: [
     {
@@ -67,11 +31,27 @@ const haggrid = {
       tooltip: 'Every chain value, and so every node in a signature, is \\(n\\) bits.',
     },
     {
-      key: 'levels', type: 'range', min: 1, max: MAX_LEVELS, step: 1, default: 3, group: LEAF,
+      key: 'levels', type: 'range', min: 1, max: 4, step: 1, default: 3, group: LEAF,
       label: 'Levels',
-      tooltip: 'Levels of units above the bottom group. Level 1 is the top, whose chain ends hash into the leaf key.',
+      tooltip: 'Levels of units above the bottom group, all with the units, chain length and distance sum below. The top level\'s chain ends hash into the leaf key.',
     },
-    ...Array.from({ length: MAX_LEVELS }, (_, i) => levelParameters(i + 1)).flat(),
+    {
+      key: 'u', type: 'range', min: 2, step: 1, default: 4, group: LEAF,
+      max: (s) => Math.min(8, hg.maxCount(s.l) + 1),
+      label: 'Units',
+      tooltip: 'Units at each level. The signature opens one and sends one node on the chain of each of the others.',
+    },
+    {
+      key: 'l', type: 'range', min: 2, max: 16, step: 1, default: 16, group: LEAF,
+      label: 'Chain length',
+      tooltip: 'Values on the chain of each unit, its end included. The verifier walks the opened unit\'s chain from its start.',
+    },
+    {
+      key: 'h', type: 'range', min: 0, step: 1, default: 15, group: LEAF,
+      max: (s) => (s.u - 1) * (s.l - 1),
+      label: 'Distance sum over hidden units',
+      tooltip: 'At each level, the distances from the nodes of the hidden units to their chain ends sum to this. The verifier walks them.',
+    },
     {
       key: 'c', type: 'range', min: 1, step: 1, default: 4, group: BOTTOM,
       max: (s) => Math.min(6, hg.maxCount(s.bw)),
