@@ -1,0 +1,182 @@
+import * as hg from '../primitives/hg-wots.js';
+import { CHAIN_CELL, svg, verticalChain } from '../draw.js';
+import { clampState } from '../tradeoff.js';
+import { newSeed, seeded, treeModel, treeParameters, treeResults } from './hg-wots.js';
+
+// HagGrid: nested HG-WOTS at the leaves of an HGT tree. Defaults are
+// (4, 3, 16, 15) three times over a (4, 4, 16, 20) bottom group, 13 nodes per
+// leaf signature, with N = 512 and K = 4.
+
+const LEAF = 'HagGrid';
+const BOTTOM = 'Bottom group';
+const TREE = 'HGT';
+const MAX_LEVELS = 4;
+const level = (i) => `Level ${i}`;
+
+// A leaf in the shape js/primitives/hg-wots.js takes, levels top first.
+export const leafOf = (s) => ({
+  levels: Array.from({ length: s.levels }, (_, i) => ({
+    units: s[`u${i + 1}`], open: 1, length: s[`l${i + 1}`], sum: s[`h${i + 1}`],
+  })),
+  bottom: { chains: s.c, length: s.bw, sum: s.bs },
+});
+
+function levelParameters(i) {
+  const group = level(i);
+  const show = (s) => s.levels >= i;
+  const [u, l, h] = [`u${i}`, `l${i}`, `h${i}`];
+  return [
+    {
+      key: u, type: 'range', min: 2, step: 1, default: 4, group, show,
+      max: (s) => Math.min(8, hg.maxCount(s[l]) + 1),
+      label: 'Units',
+      tooltip: 'Units at this level. The signature opens one and sends one node on the chain of each of the others.',
+    },
+    {
+      key: l, type: 'range', min: 2, max: 16, step: 1, default: 16, group, show,
+      label: 'Chain length',
+      tooltip: 'Values on the chain of each unit at this level, its end included. The verifier walks the opened unit\'s chain from its start.',
+    },
+    {
+      key: h, type: 'range', min: 0, step: 1, default: 15, group, show,
+      max: (s) => (s[u] - 1) * (s[l] - 1),
+      label: 'Distance sum over hidden units',
+      tooltip: 'The distances from the nodes of the hidden units to their chain ends sum to this. The verifier walks them.',
+    },
+  ];
+}
+
+const haggrid = {
+  id: 'haggrid',
+  title: 'HGT + HagGrid',
+  groups: {
+    [LEAF]: 'var(--c-ca6702)',
+    [level(1)]: 'var(--c-ee9b00)',
+    [level(2)]: 'var(--c-bb3e03)',
+    [level(3)]: 'var(--c-ae2012)',
+    [level(4)]: 'var(--c-9b2226)',
+    [BOTTOM]: 'var(--c-94d2bd)',
+    [TREE]: 'var(--c-0a9396)',
+  },
+
+  parameters: [
+    {
+      key: 'n', type: 'range', min: 8, max: 256, step: 8, default: 128, group: LEAF,
+      ticks: [32, 64, 128, 256],
+      label: '\\(n\\) (hash output bits)',
+      tooltip: 'Every chain value, and so every node in a signature, is \\(n\\) bits.',
+    },
+    {
+      key: 'levels', type: 'range', min: 1, max: MAX_LEVELS, step: 1, default: 3, group: LEAF,
+      label: 'Levels',
+      tooltip: 'Levels of units above the bottom group. Level 1 is the top, whose chain ends hash into the leaf key.',
+    },
+    ...Array.from({ length: MAX_LEVELS }, (_, i) => levelParameters(i + 1)).flat(),
+    {
+      key: 'c', type: 'range', min: 1, step: 1, default: 4, group: BOTTOM,
+      max: (s) => Math.min(6, hg.maxCount(s.bw)),
+      label: 'Chains',
+      tooltip: 'Chains in each bottom group. The opened bottom group sends one node on each.',
+    },
+    {
+      key: 'bw', type: 'range', min: 2, max: 16, step: 1, default: 16, group: BOTTOM,
+      label: 'Chain length',
+      tooltip: 'Values on each chain of a bottom group, its end included.',
+    },
+    {
+      key: 'bs', type: 'range', min: 0, step: 1, default: 20, group: BOTTOM,
+      max: (s) => s.c * (s.bw - 1),
+      label: 'Distance sum',
+      tooltip: 'The distances from the nodes of the opened bottom group to their chain ends sum to this. The verifier walks them.',
+    },
+    ...treeParameters(TREE),
+  ],
+
+  // Clamped, since a state can hold values its own bounds rule out before the
+  // parameters panel clamps it.
+  derive(state) {
+    const s = clampState(this.parameters, state);
+    return treeModel(s, leafOf(s));
+  },
+
+  results: treeResults({
+    leafName: 'HagGrid',
+    keygenTooltip: 'Every chain to its end, one hash call per unit and per bottom group on the chain ends under it, and one on the top level\'s chain ends for the leaf key.',
+    verifyTooltip: 'The walks from the revealed nodes to their chain ends, the opened unit\'s chain from its start at every level, and one hash call per level on chain ends, plus one for the bottom group.',
+  }),
+};
+
+export default haggrid;
+
+// A message sampled from `seed`: at every level the opened unit and the
+// distances of the others, and the distances of the bottom group.
+function sampleLeaf(leaf, seed) {
+  const random = seeded(seed);
+  return {
+    levels: leaf.levels.map(({ units, length, sum }) => ({
+      opened: Math.floor(random() * units),
+      distances: hg.sampleDistances(units - 1, sum, length - 1, random),
+    })),
+    bottom: hg.sampleDistances(leaf.bottom.chains, leaf.bottom.sum, leaf.bottom.length - 1, random),
+  };
+}
+
+// One leaf signing a sampled message, levels top first. Only the units under
+// the opened ones are drawn.
+function leafSvg(leaf, sample) {
+  const W = 560;
+  const g = svg();
+  const { height, gap } = CHAIN_CELL;
+  const cx = W / 2, spacing = 26;
+  let anchor = { x: cx, y: 35 };
+  let y = 76;
+
+  g.text(cx, 14, 'Leaf key = hash call on the level 1 chain ends');
+  leaf.levels.forEach(({ units, length }, i) => {
+    const { opened, distances } = sample.levels[i];
+    let next = null;
+    let hidden = 0;
+    for (let u = 0; u < units; u++) {
+      const x = cx + (u - (units - 1) / 2) * spacing;
+      g.line(anchor.x, anchor.y, x, y - 2, 'edge faint');
+      if (u === opened) {
+        const chain = verticalChain(g, x, y, length, { walked: true });
+        next = { x, y: chain.bottom + 2 };
+      } else {
+        verticalChain(g, x, y, length, { reveal: length - 1 - distances[hidden++] });
+      }
+    }
+    g.text(cx - (units / 2) * spacing - 16, y + (length * (height + gap)) / 2 + 4, `level ${i + 1}`, 'end');
+    anchor = next;
+    y += length * (height + gap) + 34;
+  });
+
+  const { chains, length } = leaf.bottom;
+  for (let c = 0; c < chains; c++) {
+    const x = cx + (c - (chains - 1) / 2) * 12;
+    g.line(anchor.x, anchor.y, x, y - 2, 'edge faint');
+    verticalChain(g, x, y, length, { reveal: length - 1 - sample.bottom[c] });
+  }
+  g.text(cx - (chains / 2) * 12 - 16, y + (length * (height + gap)) / 2 + 4, 'bottom group', 'end', 'label ots-label');
+  g.circle(cx, 28, 7, 'tree-node');
+  const bottom = y + length * (height + gap);
+  return { svg: g.toString(), width: W, height: bottom + 12 };
+}
+
+// Visualization state, nested inside the scheme component. A new seed draws
+// another message.
+export function hagGridLeaf() {
+  return {
+    seed: newSeed(),
+
+    resample() {
+      this.seed = newSeed();
+    },
+
+    // Clamped, as the state can briefly hold values out of bounds.
+    get drawing() {
+      const leaf = leafOf(clampState(haggrid.parameters, this.state));
+      return leafSvg(leaf, sampleLeaf(leaf, this.seed));
+    },
+  };
+}

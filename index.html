@@ -35,7 +35,7 @@
 </head>
 <body>
   <main x-data="{
-    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots'],
+    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid'],
     selected: 'sphincs',
     lastBlock: 'lamport',
     init() {
@@ -113,6 +113,8 @@
               @click="show('fors')">FORS</button>
       <button type="button" role="tab" :aria-selected="selected === 'hg-wots'"
               @click="show('hg-wots')">HGT + HG-WOTS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'haggrid'"
+              @click="show('haggrid')">HGT + HagGrid</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -456,6 +458,42 @@
             shaded cells the ones the signer computes to reach them, and outlined cells the ones the verifier
             computes. A revealed group's group chain is walked from its start. A hidden group sends nothing
             from its chains, drawn dashed.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('haggrid')" x-show="selected === 'haggrid'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        HagGrid nests HG-WOTS. In HG-WOTS a group holds plain hash chains; in HagGrid a unit holds smaller
+        units, each with its own chain running up to its parent, repeated over several levels down to a bottom
+        group of chains. At every level the signature <strong>hides all units but one</strong>, sending one node on
+        each of their chains at a position the message picks, and <strong>opens the remaining one</strong>, so
+        every level carries message bits. In the opened bottom group it sends one node on each chain. A forger
+        needs earlier signatures that opened the same unit at every level. HagGrid replaces only the leaf key of
+        HGT: the Merkle tree of <strong>\(\boldsymbol{N}\)</strong> leaves, the
+        <strong>\(\boldsymbol{K}\)</strong> leaves per signature, the multiproof and the grinding are as in
+        HGT + HG-WOTS. The parameters below start at \((4, 3, 16, 15)\) three times over a
+        \((4, 4, 16, 20)\) bottom group, 13 nodes per leaf signature, with \(N = 512\) and \(K = 4\).
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="hagGridLeaf">
+          <h3>Visualization
+            <button type="button" class="reset" @click="resample()">New message</button>
+          </h3>
+
+          <div data-template="tree-diagram"></div>
+
+          <p class="hint">One leaf signing a sampled message. At every level the signature opens one unit,
+            whose chain the verifier walks from its start, and sends one node on the chain of each other unit.
+            Filled cells are the nodes the signature sends, shaded cells the ones the signer computes to reach
+            them, and outlined cells the ones the verifier computes. Only the units under the opened ones are
+            drawn.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
