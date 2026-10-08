@@ -1,6 +1,7 @@
-// HG-WOTS keys at the leaves of an HGT tree, and HagGrid, which nests them.
+// HG-WOTS keys and HagGrid, which nests them, on their own or at the leaves of
+// an HGT tree.
 //
-// A leaf key is a stack of levels. Each level has `units` units, and every
+// A key is a stack of levels. Each level has `units` units, and every
 // unit has its own hash chain of `length` values running up to its parent. A
 // signature opens `open` units of a level and reveals one node on the chain of
 // each other unit. An opened unit holds the units of the next level, or below
@@ -18,7 +19,9 @@
 
 export const TARGET_BITS = 128;
 
-// Signatures per tree instance the forgery probability is computed for.
+// Signatures per key, and per tree instance, the forgery probability is
+// computed for.
+export const Q_MAX = 32;
 export const R_MAX = 32;
 
 // The cover computation for `count` distances on chains of `length` values
@@ -43,6 +46,27 @@ export function verify({ levels, bottom }) {
   for (let i = levels.length - 1; i >= 0; i--) {
     opened += levels[i].length - 1;
     opened = levels[i].open * opened + levels[i].sum + 1;
+  }
+  return opened;
+}
+
+// Hash calls to sign: every chain from its start up to the node the signature
+// sends. A hidden unit's chain starts from the ends of everything under it,
+// which the signer builds in full. The fixed sums make this the same for
+// every message.
+export function sign({ levels, bottom }) {
+  // Hash calls for the start of a unit's chain, from the deepest level up.
+  const starts = new Array(levels.length);
+  let start = bottom.chains * (bottom.length - 1) + 1;
+  for (let i = levels.length - 1; i >= 0; i--) {
+    starts[i] = start;
+    start = levels[i].units * (start + levels[i].length - 1) + 1;
+  }
+  let opened = bottom.chains * (bottom.length - 1) - bottom.sum;
+  for (let i = levels.length - 1; i >= 0; i--) {
+    const { units, open, length, sum } = levels[i];
+    const hidden = units - open;
+    opened = open * opened + hidden * starts[i] + hidden * (length - 1) - sum;
   }
   return opened;
 }
@@ -296,6 +320,21 @@ export function forgery(leafCover, N, K, rMax) {
     out[r] = total;
   });
   return out;
+}
+
+// Bits of security against forgery on one key after q = 0..Q_MAX signatures,
+// -log2 of `cover`. Kept per key shape.
+const keySecurity = new Map();
+
+export function keyForgeryBits(leaf) {
+  const key = JSON.stringify(leaf);
+  let bits = keySecurity.get(key);
+  if (!bits) {
+    bits = Array.from(cover(leaf, Q_MAX), (p) => -Math.log2(p));
+    if (keySecurity.size > 64) keySecurity.clear();
+    keySecurity.set(key, bits);
+  }
+  return bits;
 }
 
 // Bits of security against forgery for r = 0..R_MAX, -log2 of `forgery`.

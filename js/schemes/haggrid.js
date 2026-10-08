@@ -1,17 +1,16 @@
 import * as hg from '../primitives/hg-wots.js';
 import { CHAIN_CELL, svg, verticalChain } from '../draw.js';
 import { clampState } from '../tradeoff.js';
-import { newSeed, seeded, treeModel, treeParameters, treeResults } from './hg-wots.js';
+import { keyModel, keyResults, newSeed, qParameter, seeded } from './hg-wots.js';
 
-// HagGrid: nested HG-WOTS at the leaves of an HGT tree. Defaults are
+// HagGrid, nested HG-WOTS, as a few-time signature on its own. Defaults are
 // (4, 3, 16, 15) three times over a (4, 4, 16, 20) bottom group, 13 nodes per
-// leaf signature, with N = 512 and K = 4.
+// signature.
 
 const LEAF = 'HagGrid';
 const BOTTOM = 'Bottom group';
-const TREE = 'HGT';
 
-// A leaf in the shape js/primitives/hg-wots.js takes: `levels` levels of the
+// A key in the shape js/primitives/hg-wots.js takes: `levels` levels of the
 // same shape over a bottom group.
 export const leafOf = (s) => ({
   levels: Array.from({ length: s.levels }, () => ({ units: s.u, open: 1, length: s.l, sum: s.h })),
@@ -20,20 +19,20 @@ export const leafOf = (s) => ({
 
 const haggrid = {
   id: 'haggrid',
-  title: 'HGT + HagGrid',
-  groups: { [LEAF]: 'var(--c-ca6702)', [BOTTOM]: 'var(--c-94d2bd)', [TREE]: 'var(--c-0a9396)' },
+  title: 'HagGrid',
+  groups: { [LEAF]: 'var(--c-ca6702)', [BOTTOM]: 'var(--c-94d2bd)' },
 
   parameters: [
     {
       key: 'n', type: 'range', min: 8, max: 256, step: 8, default: 128, group: LEAF,
       ticks: [32, 64, 128, 256],
       label: '\\(n\\) (hash output bits)',
-      tooltip: 'Every chain value, and so every node in a signature, is \\(n\\) bits.',
+      tooltip: 'Size of each hash in bits, which sets how many bytes a signature takes.',
     },
     {
       key: 'levels', type: 'range', min: 1, max: 4, step: 1, default: 3, group: LEAF,
       label: 'Levels',
-      tooltip: 'Levels of units above the bottom group, all with the units, chain length and distance sum below. The top level\'s chain ends hash into the leaf key.',
+      tooltip: 'Levels of units above the bottom group, all with the units, chain length and distance sum below. The top level\'s chain ends hash into the public key.',
     },
     {
       key: 'u', type: 'range', min: 2, step: 1, default: 4, group: LEAF,
@@ -69,20 +68,20 @@ const haggrid = {
       label: 'Distance sum',
       tooltip: 'The distances from the nodes of the opened bottom group to their chain ends sum to this. The verifier walks them.',
     },
-    ...treeParameters(TREE),
+    qParameter,
   ],
 
   // Clamped, since a state can hold values its own bounds rule out before the
   // parameters panel clamps it.
   derive(state) {
     const s = clampState(this.parameters, state);
-    return treeModel(s, leafOf(s));
+    return keyModel(s, leafOf(s));
   },
 
-  results: treeResults({
-    leafName: 'HagGrid',
-    keygenTooltip: 'Every chain to its end, one hash call per unit and per bottom group on the chain ends under it, and one on the top level\'s chain ends for the leaf key.',
-    verifyTooltip: 'The walks from the revealed nodes to their chain ends, the opened unit\'s chain from its start at every level, and one hash call per level on chain ends, plus one for the bottom group.',
+  results: keyResults({
+    keygenTooltip: 'Every chain to its end, one hash call per unit and per bottom group on the chain ends under it, and one on the top level\'s chain ends for the public key.',
+    signTooltip: 'Every chain from its start up to the node the signature sends. A hidden unit\'s chain starts from the ends of everything under it, so the signer builds that unit in full. The fixed sums make this the same for every message.',
+    verifyTooltip: 'The walks from the sent nodes to their chain ends, the opened unit\'s chain from its start at every level, and one hash call per level on chain ends, plus one for the bottom group.',
   }),
 };
 
@@ -101,7 +100,7 @@ function sampleLeaf(leaf, seed) {
   };
 }
 
-// One leaf signing a sampled message, levels top first. Only the units under
+// One key signing a sampled message, levels top first. Only the units under
 // the opened ones are drawn.
 function leafSvg(leaf, sample) {
   const W = 560;
@@ -111,7 +110,7 @@ function leafSvg(leaf, sample) {
   let anchor = { x: cx, y: 35 };
   let y = 76;
 
-  g.text(cx, 14, 'Leaf key = hash call on the level 1 chain ends');
+  g.text(cx, 14, 'Public key = hash call on the level 1 chain ends');
   leaf.levels.forEach(({ units, length }, i) => {
     const { opened, distances } = sample.levels[i];
     let next = null;

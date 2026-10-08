@@ -1,144 +1,87 @@
 import * as hg from '../primitives/hg-wots.js';
 import { bytes, num } from '../scheme.js';
-import { hashCalls, sigPart, signatureBudget } from '../common-results.js';
+import { hashCalls, signatureBudget } from '../common-results.js';
 import { CHAIN_CELL, svg, verticalChain } from '../draw.js';
 import { clampState } from '../tradeoff.js';
 
-// An HGT tree of HG-WOTS leaves. Defaults are the HGT baseline
-// (k, s, chain length, d_g, j, group chain length, d_h) = (7, 4, 16, 20, 5, 8, 11),
-// N = 512 and K = 4.
+// HG-WOTS as a few-time signature on its own. Defaults are the HGT baseline
+// leaf (k, s, chain length, d_g, j, group chain length, d_h) =
+// (7, 4, 16, 20, 5, 8, 11).
 
 const KEY = 'HG-WOTS';
-const TREE = 'HGT';
 
-// A leaf in the shape js/primitives/hg-wots.js takes: one level of k groups
+// A key in the shape js/primitives/hg-wots.js takes: one level of k groups
 // that opens the k - j revealed ones.
 export const leafOf = (s) => ({
   levels: [{ units: s.k, open: s.k - s.j, length: s.gl, sum: s.dh }],
   bottom: { chains: s.s, length: s.w, sum: s.dg },
 });
 
-export const bitsText = (x) => (Number.isFinite(x) ? x.toFixed(1) : '?');
-export const perInstanceText = (r) => (r > hg.R_MAX ? `\\(\\geq ${hg.R_MAX}\\)` : num(r));
+const pow2 = (x) => (Number.isFinite(x) ? `\\(2^{-${x.toFixed(1)}}\\)` : '?');
 
-// Parameters of the tree, shared with HagGrid.
-export function treeParameters(group) {
-  return [
-    {
-      key: 'logN', type: 'range', min: 1, max: 16, step: 1, default: 9, group,
-      display: (x) => (2 ** x).toLocaleString(),
-      label: '\\(N\\) (leaves)',
-      tooltip: 'The HGT tree is a Merkle tree of \\(N\\) leaf keys. The signer keeps no state and rebuilds every leaf for each signature.',
-    },
-    {
-      key: 'K', type: 'range', min: 1, max: (s) => Math.min(4, 2 ** s.logN), step: 1, default: 4, group,
-      label: '\\(K\\) (leaves per signature)',
-      tooltip: 'The message hash picks \\(K\\) distinct leaves, and the signature carries a leaf signature for each with one Merkle multiproof up to the root.',
-    },
-    {
-      key: 'r', type: 'range', min: 1, max: hg.R_MAX, step: 1, default: 8, group,
-      label: '\\(r\\) (signatures made)',
-      tooltip: 'Signatures this tree instance has already made, across all of its leaves.',
-    },
-    {
-      key: 'grind', type: 'range', min: 0, max: 40, step: 0.01, default: 16.71, group,
-      label: 'Grinding (bits)',
-      tooltip: 'Grinding for the signatures per instance result. A field of the message hash must pass a threshold, which adds this many bits.',
-    },
-  ];
-}
+// The q parameter, shared with HagGrid.
+export const qParameter = {
+  key: 'q', type: 'range', min: 1, max: hg.Q_MAX, step: 1, default: 1,
+  label: '\\(q\\) (signatures on this key)',
+  tooltip: 'Signatures this key has already made, each on a different message. The forgery probability below is after \\(q\\) signatures.',
+};
 
-// Figures shared with HagGrid, for a leaf in the primitive's shape.
-export function treeModel(state, leaf) {
-  const N = 2 ** state.logN;
-  const bits = hg.forgeryBits(leaf, N, state.K);
-  const bitsAtR = bits[state.r];
-  const grinding = Math.max(0, hg.TARGET_BITS - bitsAtR);
-  const p = 2 ** -grinding;
-  const wcSearch = p >= 1 ? 1 : Math.ceil((-30 * Math.LN2) / Math.log1p(-p));
-  const keygen = hg.keygen(leaf);
+// Figures shared with HagGrid, for a key in the primitive's shape.
+export function keyModel(state, leaf) {
   const nodes = hg.nodes(leaf);
   return {
-    N, K: state.K, nodes, wcSearch,
-    bitsAtR,
-    grinding,
-    perInstance: hg.signaturesPerInstance(bits, state.grind),
-    sizes: { leaves: state.K * nodes * state.n },
+    nodes,
+    forgeryLog2: hg.keyForgeryBits(leaf)[state.q],
+    sizes: { sig: nodes * state.n },
     calls: {
-      keygen: { th: keygen },
+      keygen: { th: hg.keygen(leaf) },
+      sign: { th: hg.sign(leaf) },
       verify: { th: hg.verify(leaf) },
-      // Every leaf, the N - 1 inner nodes, and one hash call per grinding trial.
-      sign: { th: N * keygen + (N - 1) + wcSearch },
     },
   };
 }
 
-// Result groups shared with HagGrid. `leafName` names the leaf signatures.
-export function treeResults({ leafName, keygenTooltip, verifyTooltip }) {
+// Result groups shared with HagGrid.
+export function keyResults({ keygenTooltip, signTooltip, verifyTooltip }) {
   return [
     {
       rows: [
-        { label: 'Nodes per leaf signature', value: (d) => num(d.nodes) },
-      ],
-    },
-    {
-      heading: 'Witness',
-      tooltip: `The \\(K\\) leaf signatures of \\(n\\)-bit nodes, and one Merkle multiproof for the \\(K\\) leaves. The multiproof size is not modeled, so it and the total show ?.`,
-      rows: [
-        sigPart(`${leafName} signatures (\\(K\\))`, 'leaves'),
-        { label: 'Merkle multiproof', value: () => '?' },
-        { label: 'Total', value: () => '?' },
+        { label: 'Nodes per signature', value: (d) => num(d.nodes) },
+        { label: 'Signature', value: (d) => bytes(d.sizes.sig) },
       ],
     },
     {
       heading: 'Hash calls',
-      tooltip: 'Signing rebuilds every leaf and the tree, then grinds the message hash: the WC search, the number of trials that suffices except with probability \\(2^{-30}\\) at the grinding to 128 bits, one hash call each. Mapping the message hash to positions with the fixed sums is not counted. Verification also hashes the Merkle multiproof, which is not modeled.',
       rows: [
-        { label: 'Keygen per leaf', tooltip: keygenTooltip, value: (d) => hashCalls(d.calls.keygen, num) },
-        { label: 'Verify per leaf', tooltip: verifyTooltip, value: (d) => hashCalls(d.calls.verify, num) },
-        { label: 'Signing (WC search)', value: (d) => hashCalls(d.calls.sign) },
-        { label: 'Verification', value: () => '?' },
+        { label: 'Key generation', tooltip: keygenTooltip, value: (d) => hashCalls(d.calls.keygen, num) },
+        { label: 'Signing', tooltip: signTooltip, value: (d) => hashCalls(d.calls.sign, num) },
+        { label: 'Verification', tooltip: verifyTooltip, value: (d) => hashCalls(d.calls.verify, num) },
       ],
     },
-    {
-      ...signatureBudget(
-        {
-          label: 'Bits at \\(r\\)',
-          tooltip: '\\(-\\log_2\\) of the probability that a fresh message hash gives a signature an attacker can compute by hashing forward from the nodes in \\(r\\) past signatures. Each signature picks \\(K\\) distinct leaves, and every picked leaf must be covered by the past signatures that picked it. Grinding is not included.',
-          value: (d) => bitsText(d.bitsAtR),
-        },
-        {
-          label: 'Grinding to 128 bits',
-          tooltip: '128 minus the bits at \\(r\\).',
-          value: (d) => `${d.grinding.toFixed(2)} bits`,
-        },
-        {
-          label: 'Signatures per instance',
-          tooltip: `The largest \\(r\\), up to ${hg.R_MAX}, whose bits plus the grinding parameter reach 128.`,
-          value: (d) => perInstanceText(d.perInstance),
-        },
-      ),
-      group: TREE,
-    },
+    signatureBudget({
+      label: 'Forgery probability after \\(q\\) signatures',
+      tooltip: 'Probability that a new message gets a signature an attacker can compute by hashing forward from the nodes of \\(q\\) past signatures on this key. Each message an attacker tries succeeds with this probability.',
+      value: (d) => pow2(d.forgeryLog2),
+    }),
   ];
 }
 
 const hgWots = {
   id: 'hg-wots',
-  title: 'HGT + HG-WOTS',
-  groups: { [KEY]: 'var(--c-ca6702)', [TREE]: 'var(--c-0a9396)' },
+  title: 'HG-WOTS',
+  groups: { [KEY]: 'var(--c-ca6702)' },
 
   parameters: [
     {
       key: 'n', type: 'range', min: 8, max: 256, step: 8, default: 128, group: KEY,
       ticks: [32, 64, 128, 256],
       label: '\\(n\\) (hash output bits)',
-      tooltip: 'Every chain value, and so every node in a signature, is \\(n\\) bits.',
+      tooltip: 'Size of each hash in bits, which sets how many bytes a signature takes.',
     },
     {
       key: 'k', type: 'range', min: 2, max: 8, step: 1, default: 7, group: KEY,
       label: '\\(k\\) (groups)',
-      tooltip: 'The chain ends of each group hash into the start of its group chain, and the ends of the \\(k\\) group chains hash into the leaf key.',
+      tooltip: 'The chain ends of each group hash into the start of its group chain, and the ends of the \\(k\\) group chains hash into the public key.',
     },
     {
       key: 'j', type: 'range', step: 1, default: 5, group: KEY,
@@ -175,26 +118,26 @@ const hgWots = {
       label: '\\(d_h\\) (distance sum over hidden groups)',
       tooltip: 'The distances from the nodes of the \\(j\\) hidden groups to their group chain ends sum to \\(d_h\\). The verifier walks them.',
     },
-    ...treeParameters(TREE),
+    qParameter,
   ],
 
   // Clamped, since a state can hold values its own bounds rule out, such as
   // j >= k, before the parameters panel clamps it.
   derive(state) {
     const s = clampState(this.parameters, state);
-    return treeModel(s, leafOf(s));
+    return keyModel(s, leafOf(s));
   },
 
-  results: treeResults({
-    leafName: 'HG-WOTS',
-    keygenTooltip: 'Every chain and group chain to its end, one hash call per group on its chain ends, and one on the group chain ends for the leaf key.',
-    verifyTooltip: 'The walks from the revealed nodes to their chain ends, \\(k - j\\) hash calls on chain ends, every revealed group chain from its start, and the hash call for the leaf key.',
+  results: keyResults({
+    keygenTooltip: 'Every chain and group chain to its end, one hash call per group on its chain ends, and one on the group chain ends for the public key.',
+    signTooltip: 'Every chain from its start up to the node the signature sends. A hidden group\'s group chain starts from its chain ends, so the signer builds that group in full. The fixed sums make this the same for every message.',
+    verifyTooltip: 'The walks from the sent nodes to their chain ends, \\(k - j\\) hash calls on chain ends, every revealed group chain from its start, and the hash call for the public key.',
   }),
 };
 
 export default hgWots;
 
-// One leaf signing a sampled message.
+// One key signing a sampled message.
 function leafSvg(s, sample) {
   const W = 560;
   const g = svg();
@@ -205,7 +148,7 @@ function leafSvg(s, sample) {
   const groupBottom = groupTop + s.gl * (height + gap);
   const chainsTop = groupBottom + 34;
 
-  g.text(keyX, keyY - 14, 'Leaf key = hash call on the k group chain ends');
+  g.text(keyX, keyY - 14, 'Public key = hash call on the k group chain ends');
   for (let i = 0; i < s.k; i++) {
     const cx = 20 + (i + 0.5) * groupW;
     const hidden = sample.hidden.includes(i);

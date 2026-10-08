@@ -38,7 +38,7 @@
     blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid'],
     selected: 'sphincs',
     lastBlock: 'lamport',
-    // The HGT tabs are shown once hg is typed, or when a link opens one of them.
+    // The HG-WOTS and HagGrid tabs are shown once hg is typed, or when a link opens one of them.
     hgt: ['hg-wots', 'haggrid'],
     showHgt: false,
     typed: '',
@@ -122,9 +122,9 @@
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="show('fors')">FORS</button>
       <button type="button" role="tab" :aria-selected="selected === 'hg-wots'" x-show="showHgt"
-              @click="show('hg-wots')">HGT + HG-WOTS</button>
+              @click="show('hg-wots')">HG-WOTS</button>
       <button type="button" role="tab" :aria-selected="selected === 'haggrid'" x-show="showHgt"
-              @click="show('haggrid')">HGT + HagGrid</button>
+              @click="show('haggrid')">HagGrid</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -442,15 +442,17 @@
       <p class="scheme-intro">
         HG-WOTS splits the hash chains of a one-time key into <strong>\(\boldsymbol{k}\)</strong> groups of
         \(s\) chains. The chain ends of a group hash into the start of a group chain, and the \(k\) group
-        chain ends hash into the leaf key. A signature hides <strong>\(\boldsymbol{j}\)</strong> groups and sends
+        chain ends hash into the public key. A signature hides <strong>\(\boldsymbol{j}\)</strong> groups and sends
         one node on each hidden group chain, and reveals the other \(k - j\), sending one node on each of their
-        chains. The message picks the hidden groups and every position. The distances to the chain ends of each
-        revealed group sum to <strong>\(\boldsymbol{d_g}\)</strong> and those of the hidden groups to
-        <strong>\(\boldsymbol{d_h}\)</strong>, so no codeword is reachable by hashing another forward, without
-        checksum chains. A group that stays hidden in every past signature keeps its chains unexposed, and its
-        group chain carries message bits, so a leaf survives reuse. HGT is a Merkle tree of
-        <strong>\(\boldsymbol{N}\)</strong> HG-WOTS leaves: the message hash picks
-        <strong>\(\boldsymbol{K}\)</strong> of them, and a separate field of it must pass a grinding threshold.
+        chains. The message picks the hidden groups and every position.
+      </p>
+      <p class="scheme-intro">
+        The distances to the chain ends add up to a fixed total, <strong>\(\boldsymbol{d_g}\)</strong> in each
+        revealed group and <strong>\(\boldsymbol{d_h}\)</strong> across the hidden groups. Moving one node
+        forward to sign a different message would force another node backward, which would mean inverting the
+        hash, so no checksum chains are needed. A group that stays hidden in every past signature keeps its
+        chains unexposed, and its group chain carries message bits, so a key can sign more than one message,
+        and the forgery probability grows with the number of signatures <strong>\(\boldsymbol{q}\)</strong>.
       </p>
 
       <div class="explorer">
@@ -463,7 +465,7 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">One leaf signing a sampled message. Filled cells are the nodes the signature sends,
+          <p class="hint">One key signing a sampled message. Filled cells are the nodes the signature sends,
             shaded cells the ones the signer computes to reach them, and outlined cells the ones the verifier
             computes. A revealed group's group chain is walked from its start. A hidden group sends nothing
             from its chains, drawn dashed.</p>
@@ -481,10 +483,7 @@
         group of chains. At every level the signature <strong>hides all units but one</strong>, sending one node on
         each of their chains at a position the message picks, and <strong>opens the remaining one</strong>, so
         every level carries message bits. In the opened bottom group it sends one node on each chain. A forger
-        needs earlier signatures that opened the same unit at every level. HagGrid replaces only the leaf key of
-        HGT: the Merkle tree of <strong>\(\boldsymbol{N}\)</strong> leaves, the
-        <strong>\(\boldsymbol{K}\)</strong> leaves per signature, the multiproof and the grinding are as in
-        HGT + HG-WOTS.
+        needs earlier signatures that opened the same unit at every level.
       </p>
 
       <div class="explorer">
@@ -497,7 +496,7 @@
 
           <div data-template="tree-diagram"></div>
 
-          <p class="hint">One leaf signing a sampled message. At every level the signature opens one unit,
+          <p class="hint">One key signing a sampled message. At every level the signature opens one unit,
             whose chain the verifier walks from its start, and sends one node on the chain of each other unit.
             Filled cells are the nodes the signature sends, shaded cells the ones the signer computes to reach
             them, and outlined cells the ones the verifier computes. Only the units under the opened ones are
