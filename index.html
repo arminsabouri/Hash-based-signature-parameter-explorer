@@ -451,7 +451,6 @@
         group chain carries message bits, so a leaf survives reuse. HGT is a Merkle tree of
         <strong>\(\boldsymbol{N}\)</strong> HG-WOTS leaves: the message hash picks
         <strong>\(\boldsymbol{K}\)</strong> of them, and a separate field of it must pass a grinding threshold.
-        The parameters below start at the HGT baseline \((7, 4, 16, 20, 5, 8, 11)\) with \(N = 512\) and \(K = 4\).
       </p>
 
       <div class="explorer">
@@ -485,8 +484,7 @@
         needs earlier signatures that opened the same unit at every level. HagGrid replaces only the leaf key of
         HGT: the Merkle tree of <strong>\(\boldsymbol{N}\)</strong> leaves, the
         <strong>\(\boldsymbol{K}\)</strong> leaves per signature, the multiproof and the grinding are as in
-        HGT + HG-WOTS. The parameters below start at \((4, 3, 16, 15)\) three times over a
-        \((4, 4, 16, 20)\) bottom group, 13 nodes per leaf signature, with \(N = 512\) and \(K = 4\).
+        HGT + HG-WOTS.
       </p>
 
       <div class="explorer">
