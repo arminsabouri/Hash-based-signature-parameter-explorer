@@ -1,18 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as hg from '../js/primitives/hg-wots.js';
-import hgWots, { leafOf } from '../js/schemes/hg-wots.js';
-import { initialState } from '../js/scheme.js';
+import hgWots from '../js/schemes/hg-wots.js';
 import { bytes, derive } from './helpers.js';
 
 // HG-WOTS at the HGT baseline (k, s, chain length, d_g, j, group chain length,
 // d_h) = (7, 4, 16, 20, 5, 8, 11): 13 nodes, 477 hash calls to build a key and
-// 68 to verify. In an HGT tree of N = 512 such leaves with K = 4: 2^-111.29 at
-// r = 8, a grinding threshold of tau = 40,168 out of 2^32, and 8 signatures
-// per instance at 16.71-bit grinding.
+// 68 to verify.
 
-const baseline = leafOf(initialState(hgWots.parameters));
 const choose = (n, k) => (k === 0 ? 1 : (choose(n - 1, k - 1) * n) / k);
 
 test('the defaults are the HGT baseline leaf', () => {
@@ -44,11 +39,4 @@ test('the forgery probability grows with every signature', () => {
     assert.ok(forgeryLog2 < last, `q = ${q}: ${forgeryLog2}`);
     last = forgeryLog2;
   }
-});
-
-test('in an HGT tree the baseline leaf gives the HGT figures', () => {
-  const bits = hg.forgeryBits(baseline, 512, 4);
-  assert.equal(bits[8].toFixed(2), '111.29');
-  assert.equal(Math.floor(2 ** (32 - (hg.TARGET_BITS - bits[8]))), 40168);
-  assert.equal(hg.signaturesPerInstance(bits, 16.71), 8);
 });

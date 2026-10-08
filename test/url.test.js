@@ -10,11 +10,12 @@ import fxmss from '../js/schemes/fxmss.js';
 import fors from '../js/schemes/fors.js';
 import hgWots from '../js/schemes/hg-wots.js';
 import haggrid from '../js/schemes/haggrid.js';
+import hgt from '../js/schemes/hgt.js';
 import sphincs from '../js/schemes/sphincs.js';
 import shrincs from '../js/schemes/shrincs.js';
 import shrimps from '../js/schemes/shrimps.js';
 
-const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, 'hg-wots': hgWots, haggrid, sphincs, shrincs, shrimps };
+const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, 'hg-wots': hgWots, haggrid, hgt, sphincs, shrincs, shrimps };
 
 // A shared link carries the parameters that differ from the defaults, and
 // opening it restores them.

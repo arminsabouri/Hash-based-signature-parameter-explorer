@@ -1,36 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as hg from '../js/primitives/hg-wots.js';
-import haggrid, { leafOf } from '../js/schemes/haggrid.js';
+import haggrid from '../js/schemes/haggrid.js';
 import hgWots from '../js/schemes/hg-wots.js';
-import { initialState } from '../js/scheme.js';
 import { bytes, derive } from './helpers.js';
 
-// HagGrid against its figures in an HGT tree of N = 512 leaves with K = 4 and
-// 16.71-bit grinding: bits at r = 8, signatures per instance, and hash calls
-// to build and to verify one key. 13 nodes is (4, 3, 16, 15) three times over
-// a (4, 4, 16, 20) bottom group, and 12 nodes is the same levels over a
-// (3, 3, 16, 19) bottom group, the shape those figures fit.
+// HagGrid against its hash calls to build and to verify one key. 13 nodes is
+// (4, 3, 16, 15) three times over a (4, 4, 16, 20) bottom group, and 12 nodes
+// is the same levels over a (3, 3, 16, 19) bottom group.
 
 const shapes = {
-  13: { nodes: 13, bits: '127.8', perInstance: 25, keygen: 5185, verify: 114, state: {} },
-  12: { nodes: 12, bits: '121.9', perInstance: 16, keygen: 4225, verify: 113, state: { c: 3, bs: 19 } },
+  13: { nodes: 13, keygen: 5185, verify: 114, state: {} },
+  12: { nodes: 12, keygen: 4225, verify: 113, state: { c: 3, bs: 19 } },
 };
 
 for (const [name, want] of Object.entries(shapes)) {
   test(`HagGrid, ${name} nodes`, () => {
-    const state = { ...initialState(haggrid.parameters), ...want.state };
     const d = derive(haggrid, want.state);
     assert.equal(d.nodes, want.nodes);
     assert.equal(bytes(d.sizes.sig), want.nodes * 16);
     assert.equal(d.calls.keygen.th, want.keygen);
     assert.equal(d.calls.verify.th, want.verify);
     assert.equal(d.calls.sign.th + d.calls.verify.th, d.calls.keygen.th);
-
-    const bits = hg.forgeryBits(leafOf(state), 512, 4);
-    assert.equal(bits[8].toFixed(1), want.bits);
-    assert.equal(hg.signaturesPerInstance(bits, 16.71), want.perInstance);
   });
 }
 

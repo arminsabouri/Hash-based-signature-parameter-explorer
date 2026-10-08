@@ -7,11 +7,12 @@ import fxmss, { fxmssTree } from './schemes/fxmss.js';
 import fors, { forsForest } from './schemes/fors.js';
 import hgWots, { hgWotsLeaf } from './schemes/hg-wots.js';
 import haggrid, { hagGridLeaf } from './schemes/haggrid.js';
+import hgt, { hgtTree } from './schemes/hgt.js';
 import sphincs, { sphincsDiagram } from './schemes/sphincs.js';
 import shrincs, { shrincsDiagram } from './schemes/shrincs.js';
 import shrimps, { shrimpsDiagram } from './schemes/shrimps.js';
 
-const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, 'hg-wots': hgWots, haggrid, sphincs, shrincs, shrimps };
+const schemes = { lamport, wots, xmss, 'xmss-mt': xmssMt, fxmss, fors, 'hg-wots': hgWots, haggrid, hgt, sphincs, shrincs, shrimps };
 
 // Fill panel placeholders from their <template> before Alpine walks the DOM.
 // This module loads before the deferred Alpine script.
@@ -39,6 +40,7 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('forsForest', forsForest);
   Alpine.data('hgWotsLeaf', hgWotsLeaf);
   Alpine.data('hagGridLeaf', hagGridLeaf);
+  Alpine.data('hgtTree', hgtTree);
   Alpine.data('sphincsDiagram', sphincsDiagram);
   Alpine.data('shrincsDiagram', shrincsDiagram);
   Alpine.data('shrimpsDiagram', shrimpsDiagram);

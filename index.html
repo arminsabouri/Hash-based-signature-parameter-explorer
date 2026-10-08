@@ -35,11 +35,11 @@
 </head>
 <body>
   <main x-data="{
-    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid'],
+    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid', 'hgt'],
     selected: 'sphincs',
     lastBlock: 'lamport',
-    // The HG-WOTS and HagGrid tabs are shown once hg is typed, or when a link opens one of them.
-    hgt: ['hg-wots', 'haggrid'],
+    // The HG-WOTS, HagGrid and HGT tabs are shown once hg is typed, or when a link opens one of them.
+    hgt: ['hg-wots', 'haggrid', 'hgt'],
     showHgt: false,
     typed: '',
     init() {
@@ -125,6 +125,8 @@
               @click="show('hg-wots')">HG-WOTS</button>
       <button type="button" role="tab" :aria-selected="selected === 'haggrid'" x-show="showHgt"
               @click="show('haggrid')">HagGrid</button>
+      <button type="button" role="tab" :aria-selected="selected === 'hgt'" x-show="showHgt"
+              @click="show('hgt')">HGT</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -440,6 +442,12 @@
     <section class="scheme" x-data="scheme('hg-wots')" x-show="selected === 'hg-wots'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
+        <strong>TL;DR:</strong> Reusing a WOTS key exposes values on every chain, which drops its security from
+        about 128 bits to a few dozen. HG-WOTS hides most of its groups behind a group chain in each signature, so
+        groups that stayed hidden in earlier signatures remain unexposed, and the key can sign a few times with
+        security falling gradually rather than all at once.
+      </p>
+      <p class="scheme-intro">
         HG-WOTS splits the hash chains of a one-time key into <strong>\(\boldsymbol{k}\)</strong> groups of
         \(s\) chains. The chain ends of a group hash into the start of a group chain, and the \(k\) group
         chain ends hash into the public key. A signature hides <strong>\(\boldsymbol{j}\)</strong> groups and sends
@@ -478,6 +486,12 @@
     <section class="scheme" x-data="scheme('haggrid')" x-show="selected === 'haggrid'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
+        <strong>TL;DR:</strong> HagGrid nests HG-WOTS: each unit holds smaller units with their own chains, and at
+        every level the signature opens one unit and hides the rest, so every level carries message bits. A forger
+        needs earlier signatures that opened the same unit at every level, which buys more security per node than
+        HG-WOTS, at the cost of more hash calls to build the key and to verify.
+      </p>
+      <p class="scheme-intro">
         HagGrid nests HG-WOTS. In HG-WOTS a group holds plain hash chains; in HagGrid a unit holds smaller
         units, each with its own chain running up to its parent, repeated over several levels down to a bottom
         group of chains. At every level the signature <strong>hides all units but one</strong>, sending one node on
@@ -501,6 +515,49 @@
             Filled cells are the nodes the signature sends, shaded cells the ones the signer computes to reach
             them, and outlined cells the ones the verifier computes. Only the units under the opened ones are
             drawn.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('hgt')" x-show="selected === 'hgt'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        HGT is a Merkle tree of <strong>\(\boldsymbol{N}\)</strong> leaf keys, each an HG-WOTS or a HagGrid key.
+        The message hash picks <strong>\(\boldsymbol{K}\)</strong> distinct leaves, and the signature carries a
+        leaf signature for each with one Merkle multiproof up to the root. A separate field of the message hash
+        must pass a grinding threshold. The signer keeps no state and rebuilds every leaf for each signature, so
+        leaves are picked again across signatures, and the security after <strong>\(\boldsymbol{r}\)</strong>
+        signatures depends on how well a leaf survives reuse.
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization">
+          <h3>Visualization</h3>
+
+          <div x-data="hgtTree">
+            <div data-template="tree-diagram"></div>
+          </div>
+
+          <div x-data="hgWotsLeaf" x-show="state.leaf === 'HG-WOTS'">
+            <h4>One leaf
+              <button type="button" class="reset" @click="resample()">New message</button>
+            </h4>
+            <div data-template="tree-diagram"></div>
+          </div>
+          <div x-data="hagGridLeaf" x-show="state.leaf === 'HagGrid'">
+            <h4>One leaf
+              <button type="button" class="reset" @click="resample()">New message</button>
+            </h4>
+            <div data-template="tree-diagram"></div>
+          </div>
+
+          <p class="hint">The tree above, and one leaf signing a sampled message below. Filled cells are the
+            nodes the signature sends, shaded cells the ones the signer computes to reach them, and outlined cells
+            the ones the verifier computes.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
