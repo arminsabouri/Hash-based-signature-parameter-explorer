@@ -143,6 +143,26 @@ export function drawLeafChains(g, { leafX, leafY, l, w, notes = [], compact = fa
   return { bottom: chains.bottom + 44 };
 }
 
+// Cell size of a chain drawn by verticalChain.
+export const CHAIN_CELL = { width: 9, height: 5, gap: 1 };
+
+// A chain of `length` values drawn upward from its start, with the cell at
+// `top` its end. With `reveal`, the node at that position is revealed, the
+// cells below are the signer's and those above the verifier's. With `walked`,
+// the verifier computes every cell; with neither, the chain sends nothing.
+// Returns the x of its center and the y of its end and start.
+export function verticalChain(g, x, top, length, { reveal = null, walked = false } = {}) {
+  const { width, height, gap } = CHAIN_CELL;
+  for (let i = 0; i < length; i++) {
+    const y = top + (length - 1 - i) * (height + gap);
+    let cls = 'cell-idle';
+    if (walked) cls = 'cell-verifier';
+    else if (reveal !== null) cls = i < reveal ? 'cell-signer' : i === reveal ? 'cell-revealed' : 'cell-verifier';
+    g.rect(x - width / 2, y, width, height, cls);
+  }
+  return { x, top, bottom: top + length * (height + gap) - gap };
+}
+
 // Bracket from y1 to y2 at x, with label lines centered to its right.
 export function bracket(g, x, y1, y2, lines) {
   g.line(x, y1, x, y2, 'bracket');

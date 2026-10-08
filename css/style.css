@@ -406,6 +406,10 @@ button.wots-digit { cursor: pointer; }
 .xmss-tree .chain-end { fill: var(--c-ca6702); }
 .xmss-tree .label { fill: currentColor; font-size: 11px; font-family: ui-monospace, monospace; }
 .xmss-tree .ots-label { fill: var(--c-ca6702); }
+.xmss-tree .cell-signer { fill: color-mix(in srgb, var(--c-0a9396) 45%, transparent); }
+.xmss-tree .cell-revealed { fill: var(--c-ee9b00); }
+.xmss-tree .cell-verifier { fill: none; stroke: var(--c-ee9b00); stroke-width: 1; }
+.xmss-tree .cell-idle { fill: none; stroke: currentColor; stroke-width: 0.75; stroke-dasharray: 2 2; opacity: 0.4; }
 
 /* Parameter groups, colored per group */
 .grouped {

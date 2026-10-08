@@ -35,7 +35,7 @@
 </head>
 <body>
   <main x-data="{
-    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors'],
+    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots'],
     selected: 'sphincs',
     lastBlock: 'lamport',
     init() {
@@ -111,6 +111,8 @@
               @click="show('fxmss')">FXMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="show('fors')">FORS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'hg-wots'"
+              @click="show('hg-wots')">HGT + HG-WOTS</button>
     </nav>
 
     <section class="scheme" x-data="scheme('lamport')" x-show="selected === 'lamport'">
@@ -417,6 +419,43 @@
           <p class="hint">Each tree has \(2^a\) secret leaves; the filled square is the leaf a signature reveals.
             The verifier hashes it up its authentication path to the tree's root and compresses the \(k\) roots
             into the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('hg-wots')" x-show="selected === 'hg-wots'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        HG-WOTS splits the hash chains of a one-time key into <strong>\(\boldsymbol{k}\)</strong> groups of
+        \(s\) chains. The chain ends of a group hash into the start of a group chain, and the \(k\) group
+        chain ends hash into the leaf key. A signature hides <strong>\(\boldsymbol{j}\)</strong> groups and sends
+        one node on each hidden group chain, and reveals the other \(k - j\), sending one node on each of their
+        chains. The message picks the hidden groups and every position. The distances to the chain ends of each
+        revealed group sum to <strong>\(\boldsymbol{d_g}\)</strong> and those of the hidden groups to
+        <strong>\(\boldsymbol{d_h}\)</strong>, so no codeword is reachable by hashing another forward, without
+        checksum chains. A group that stays hidden in every past signature keeps its chains unexposed, and its
+        group chain carries message bits, so a leaf survives reuse. HGT is a Merkle tree of
+        <strong>\(\boldsymbol{N}\)</strong> HG-WOTS leaves: the message hash picks
+        <strong>\(\boldsymbol{K}\)</strong> of them, and a separate field of it must pass a grinding threshold.
+        The parameters below start at the HGT baseline \((7, 4, 16, 20, 5, 8, 11)\) with \(N = 512\) and \(K = 4\).
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="hgWotsLeaf">
+          <h3>Visualization
+            <button type="button" class="reset" @click="resample()">New message</button>
+          </h3>
+
+          <div data-template="tree-diagram"></div>
+
+          <p class="hint">One leaf signing a sampled message. Filled cells are the nodes the signature sends,
+            shaded cells the ones the signer computes to reach them, and outlined cells the ones the verifier
+            computes. A revealed group's group chain is walked from its start. A hidden group sends nothing
+            from its chains, drawn dashed.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>
