@@ -38,17 +38,27 @@
     blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid'],
     selected: 'sphincs',
     lastBlock: 'lamport',
+    // The HGT tabs are shown once hg is typed, or when a link opens one of them.
+    hgt: ['hg-wots', 'haggrid'],
+    showHgt: false,
+    typed: '',
     init() {
       const id = location.hash.slice(1);
       if (id === 'sphincs' || id === 'shrincs' || this.blocks.includes(id)) this.selected = id;
       if (this.blocks.includes(id)) this.lastBlock = id;
+      if (this.hgt.includes(id)) this.showHgt = true;
+    },
+    typeKey(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
+      this.typed = (this.typed + event.key.toLowerCase()).slice(-2);
+      if (this.typed === 'hg') this.showHgt = true;
     },
     show(id) {
       this.selected = id;
       if (this.blocks.includes(id)) this.lastBlock = id;
       history.replaceState(null, '', location.search + '#' + id);
     },
-  }">
+  }" @keydown.window="typeKey($event)">
     <header>
       <h1 class="default-only">Hash Based Digital Signature Parameter Explorer</h1>
       <h1 class="presentation-only">Bitcoin Has a Post-Quantum Problem</h1>
@@ -111,9 +121,9 @@
               @click="show('fxmss')">FXMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="show('fors')">FORS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'hg-wots'"
+      <button type="button" role="tab" :aria-selected="selected === 'hg-wots'" x-show="showHgt"
               @click="show('hg-wots')">HGT + HG-WOTS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'haggrid'"
+      <button type="button" role="tab" :aria-selected="selected === 'haggrid'" x-show="showHgt"
               @click="show('haggrid')">HGT + HagGrid</button>
     </nav>
 
