@@ -10,7 +10,7 @@ import * as forsP from '../js/primitives/fors.js';
 import * as merkleTree from '../js/primitives/merkle-tree.js';
 import * as messageHash from '../js/primitives/message-hash.js';
 import { bytes, derive } from './helpers.js';
-import { fixtures, formulas } from './reference/load.js';
+import { fixtures } from './reference/load.js';
 import {
   MIDSTATE, THEIR_HMSG, THEIR_PRFMSG, digestBits, verifyOffset,
 } from './reference/conventions.js';
@@ -104,59 +104,6 @@ test('SPHINCS+ signing reproduces the reference once its parts are named', () =>
       derive(sphincs, { n: N, b: lg(w), hp, d, a, k }).signCompressions,
       want.sg + extra + MIDSTATE,
       `${key} signing, site composition`,
-    );
-  }
-});
-
-// variant key: W+C or W+C_F+C, then h, d, k, a, w, S_{w,n}.
-const variant = (key) => {
-  const [scheme, rest] = key.split('|');
-  const [h, d, k, a, w, swn] = rest.split(',').map(Number);
-  return { scheme, h, d, k, a, w, swn, hp: h / d };
-};
-
-const variantState = ({ h, d, k, a, w, swn, hp, scheme }) => ({
-  n: N, b: lg(w), hp, d, a, k,
-  wotsPlusC: true, z: 0, S: swn, wotsR: 32,
-  forsPlusC: scheme.includes('F+C'), forsR: 32,
-});
-
-test('SPHINCS+ with WOTS+C matches the reference variants', () => {
-  for (const [key, want] of Object.entries(fixtures.variants)) {
-    const v = variant(key);
-    if (v.scheme !== 'W+C' || !inRange(v.w)) continue; // PORS+FP: test/shrimps.test.js
-    const d0 = derive(sphincs, variantState(v));
-    assert.equal(bytes(d0.sizes.sig), want.size, `${key} signature`);
-    assert.equal(d0.keygenCompressions - MIDSTATE, want.kg, `${key} key generation`);
-    assert.equal(
-      d0.verifyCompressions - verifyOffset(N, digestBits(v)),
-      want.sv_worst,
-      `${key} worst-case verification`,
-    );
-  }
-});
-
-test('SPHINCS+ with FORS+C differs from the reference by the last tree leaf and counter', () => {
-  // Here a FORS+C signature keeps the revealed leaf of the omitted tree and
-  // carries its own counter (js/primitives/fors.js). The reference drops the
-  // tree whole and carries no FORS counter (costs.sage, compute_size). The gap
-  // is n + r bits either way, and is asserted as it stands, unresolved.
-  for (const [key, want] of Object.entries(fixtures.variants)) {
-    const v = variant(key);
-    if (v.scheme !== 'W+C_F+C' || !inRange(v.w)) continue;
-    const state = variantState(v);
-    const d0 = derive(sphincs, state);
-    assert.equal(bytes(d0.sizes.sig), want.size + bytes(N + state.forsR), `${key} signature`);
-    assert.equal(d0.keygenCompressions - MIDSTATE, want.kg, `${key} key generation`);
-    // Verification hashes that revealed leaf too, so the FORS+C term differs.
-    // Both sides are written out rather than folded into a constant.
-    const msg = messageHash.model(state, { digestBits: 256, counterBits: state.forsR });
-    const ours = forsP.model({ ...state, plusC: true }, msg.mgf1).verify.compressions;
-    const theirs = (v.k - 1) + (v.k - 1) * v.a + formulas.computeTh(v.k - 1);
-    assert.equal(
-      d0.verifyCompressions - verifyOffset(N, digestBits(v), state.forsR) - (ours - theirs),
-      want.sv_worst,
-      `${key} worst-case verification`,
     );
   }
 });

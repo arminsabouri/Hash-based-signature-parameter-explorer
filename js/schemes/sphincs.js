@@ -1,12 +1,11 @@
 import * as fors from '../primitives/fors.js';
 import * as merkleTree from '../primitives/merkle-tree.js';
 import * as messageHash from '../primitives/message-hash.js';
-import * as wotsC from '../primitives/wots-c.js';
-import * as plainWots from '../primitives/wots.js';
+import * as wots from '../primitives/wots.js';
 import { approx, bytes, num } from '../scheme.js';
 import {
-  blockSpace, exhaustProbability, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
-  probability, sigPart, signatureBudget, withMidstate,
+  blockSpace, hashCalls, hashCallsNote, messageCompressionsTooltip, messageHashNote,
+  sigPart, signatureBudget, withMidstate,
 } from '../common-results.js';
 import { drawForest, drawHypertree, svg } from '../draw.js';
 import { axisSpans, hashCallCount, tradeoffGroup } from '../tradeoff.js';
@@ -14,22 +13,16 @@ import { axisSpans, hashCallCount, tradeoffGroup } from '../tradeoff.js';
 // SPHINCS+, the structure standardized as SLH-DSA in FIPS 205: a FORS key
 // pair at every bottom-layer leaf of an XMSS^MT hypertree. The message digest
 // selects the leaf, so the signer keeps no state. The OTS of the hypertree is
-// WOTS or WOTS+C, and the few-time signature is FORS or FORS+C.
+// WOTS, and the few-time signature is FORS.
 // Defaults are the parameters of SLH-DSA-SHA2-128s.
 
 const HT = 'Hypertree';
 const OTS = 'OTS';
 const FORS = 'FORS';
 
-// The WOTS+C and FORS+C counters are separate, so their parameters are kept
-// under separate keys and passed to each primitive under its own name.
 const pick = (params, keys) => keys.map((key) => params.find((p) => p.key === key));
-const wotsParams = wotsC.parameters(OTS);
+const wotsParams = wots.parameters(OTS);
 const forsParams = fors.parameters(FORS);
-
-const otsModel = (state) => (state.wotsPlusC
-  ? wotsC.model({ ...state, r: state.wotsR, compressed: true })
-  : plainWots.model({ ...state, compressed: true }));
 
 // FIPS 205 message digest: ka bits for the FORS indices, h - h' bits for the
 // tree index, and h' bits for the leaf index, each padded to whole bytes.
@@ -49,15 +42,15 @@ const SERIES = [{
   }),
 }];
 
-// The knobs that tune a counter search rather than the structure, held at
-// their defaults when the endpoints are worked out.
-export const SEARCH_KEYS = ['z', 'S', 'wotsR', 'forsR'];
+// SPHINCS+ has no counter search, so no knob is held when the endpoints are
+// worked out.
+export const SEARCH_KEYS = [];
 
 const AXIS_SPANS = [
   [8, 343136],
-  [3.3858550252753835e-12, 0.013513513513513514],
-  [0.0000036825223805297676, 0.1111111111111111],
-  [1.0954219119121497e-10, 0.02857142857142857],
+  [3.3858550252753835e-12, 0.012987012987012988],
+  [0.0000036825223805297676, 0.0625],
+  [1.0954219119121497e-10, 0.0196078431372549],
   [2, 4.562440617622195e+192],
 ];
 
@@ -83,31 +76,16 @@ const scheme = {
       tooltip: 'The hypertree has total height \\(h = d \\cdot h\'\\) and \\(2^h\\) bottom-layer leaves, one FORS key pair each. Each layer adds one OTS signature and one authentication path to the signature.',
     },
     ...pick(forsParams, ['k', 'a']),
-    {
-      ...pick(forsParams, ['plusC'])[0], key: 'forsPlusC',
-      tooltip: 'The signer grinds a counter until the last \\(a\\) bits of the FORS part of the digest are zero, so the last tree always opens its first leaf. That tree carries no authentication path, and the signer never builds it.',
-    },
-    { ...pick(forsParams, ['r'])[0], key: 'forsR', show: (s) => s.forsPlusC },
     ...pick(wotsParams, ['b']),
-    {
-      key: 'wotsPlusC', type: 'checkbox', default: false, group: OTS,
-      label: 'WOTS+C',
-      tooltip: 'The signer grinds a counter until the digits of the signed value sum to \\(S_{w,n}\\), which replaces the checksum chains. Each of the \\(d\\) OTS signatures carries its own counter.',
-    },
-    ...pick(wotsParams, ['z', 'S']).map((p) => ({ ...p, show: (s) => s.wotsPlusC })),
-    { ...pick(wotsParams, ['r'])[0], key: 'wotsR', show: (s) => s.wotsPlusC },
   ],
 
   derive(state) {
     const { n, d, hp, k, a } = state;
     const h = d * hp;
-    const ots = otsModel(state);
+    const ots = wots.model({ ...state, compressed: true });
     const tree = merkleTree.model({ h: hp, n }, ots);
-    const msg = messageHash.model(state, {
-      digestBits: digestBits(state),
-      counterBits: state.forsPlusC ? state.forsR : 0,
-    });
-    const f = fors.model({ ...state, plusC: state.forsPlusC, r: state.forsR }, msg.mgf1);
+    const msg = messageHash.model(state, { digestBits: digestBits(state) });
+    const f = fors.model({ ...state, plusC: false }, msg.mgf1);
 
     // Signature (R, sigma_FORS, then sigma_OTS and AuthPath for each layer).
     const sizes = {
@@ -140,10 +118,7 @@ const scheme = {
     };
 
     return {
-      h, k, leaves: 2 ** h, t: f.t, built: f.built, l: ots.l ?? ots.len, w: ots.w,
-      wotsPlusC: state.wotsPlusC, forsPlusC: state.forsPlusC,
-      wots: { p: ots.p, wcSearch: ots.wcSearch, exhaustLog2: ots.exhaustLog2 },
-      fors: { p: f.p, wcSearch: f.wcSearch, exhaustLog2: f.exhaustLog2 },
+      h, k, leaves: 2 ** h, t: f.t, l: ots.len, w: ots.w,
       sizes, calls: ops, ...withMidstate(ops),
     };
   },
@@ -163,11 +138,6 @@ const scheme = {
       group: FORS,
       rows: [
         { label: 'Leaves per tree (\\(2^a\\))', value: (d) => approx(d.t) },
-        {
-          label: 'Trees with an authentication path',
-          tooltip: 'All \\(k\\) trees for FORS. FORS+C leaves out the last tree, which always opens its first leaf.',
-          value: (d) => num(d.built),
-        },
       ],
     },
     {
@@ -189,38 +159,8 @@ const scheme = {
       ],
     },
     {
-      heading: 'Search',
-      group: OTS,
-      show: (d) => d.wotsPlusC,
-      tooltip: 'The WOTS+C counter search, run for each of the \\(d\\) OTS signatures: on the FORS public key at the bottom layer and on a tree root at every other layer. WC search is the number of trials that suffices except with probability \\(2^{-30}\\).',
-      rows: [
-        { label: 'Success probability per trial (\\(p_\\nu\\))', value: (d) => probability(d.wots.p) },
-        { label: 'WC search', value: (d) => approx(d.wots.wcSearch) },
-        {
-          label: 'Counter exhaustion probability',
-          tooltip: 'Probability that none of the \\(2^r\\) counter values meets the conditions, \\((1 - p_\\nu)^{2^r}\\).',
-          value: (d) => exhaustProbability(d.wots.exhaustLog2),
-        },
-      ],
-    },
-    {
-      heading: 'Search',
-      group: FORS,
-      show: (d) => d.forsPlusC,
-      tooltip: 'The FORS+C counter search on the message digest. Each trial recomputes the MGF1 part of \\(\\mathbf{H}_{\\mathbf{msg}}\\) with the counter and succeeds when the last \\(a\\) bits of the FORS part are zero, with probability \\(2^{-a}\\). WC search is the number of trials that suffices except with probability \\(2^{-30}\\).',
-      rows: [
-        { label: 'Success probability per trial', value: (d) => probability(d.fors.p) },
-        { label: 'WC search', value: (d) => approx(d.fors.wcSearch) },
-        {
-          label: 'Counter exhaustion probability',
-          tooltip: 'Probability that none of the \\(2^r\\) counter values meets the condition, \\((1 - 2^{-a})^{2^r}\\).',
-          value: (d) => exhaustProbability(d.fors.exhaustLog2),
-        },
-      ],
-    },
-    {
       heading: 'Hash calls',
-      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. With WOTS, signing and verification are the worst case over all messages. ${messageHashNote} ${hashCallsNote}`,
+      tooltip: `Key generation builds the top-layer tree. The digest selects a different leaf for every message, so signing builds the \\(k\\) FORS trees and the \\(d\\) hypertree trees on the path to that leaf. Signing and verification are the worst case over all messages. ${messageHashNote} ${hashCallsNote}`,
       rows: [
         { label: 'Key generation', value: (d) => hashCalls(d.calls.keygen) },
         { label: 'Signing', value: (d) => hashCalls(d.calls.sign) },
@@ -231,7 +171,7 @@ const scheme = {
     /*
     {
       heading: 'SHA-256 compressions',
-      tooltip: `${messageCompressionsTooltip(' and a \\(ka + h\\) bit digest')} Signing includes the WC search of each counter that is in use.`,
+      tooltip: `${messageCompressionsTooltip(' and a \\(ka + h\\) bit digest')}`,
       rows: [
         { label: 'Key generation', value: (d) => approx(d.keygenCompressions) },
         { label: 'Signing', value: (d) => approx(d.signCompressions) },
@@ -260,10 +200,10 @@ export default scheme;
 
 // Structure diagram: the d layers of the hypertree, with the FORS forest of
 // the selected bottom-layer leaf drawn beneath it.
-function sphincsSvg(hp, d, k, a, forsPlusC, otsLabel) {
+function sphincsSvg(hp, d, k, a) {
   const W = 560;
   const g = svg();
-  const leaf = drawHypertree(g, { hp, d, left: 90, right: W - 130, bx: W - 112, top: 30, otsLabel });
+  const leaf = drawHypertree(g, { hp, d, left: 90, right: W - 130, bx: W - 112, top: 30, otsLabel: 'WOTS' });
   const left = 40, right = W - 120;
   const pkX = (left + right) / 2;
   const busY = leaf.y + 62;
@@ -274,10 +214,10 @@ function sphincsSvg(hp, d, k, a, forsPlusC, otsLabel) {
   g.line(leaf.x, leaf.y + 7, leaf.x, busY, 'ots-edge');
   g.line(leaf.x, busY, pkX, busY, 'ots-edge');
   g.line(pkX, busY, pkX, top - 7, 'ots-edge');
-  g.text(leaf.x + 10, leaf.y + 28, `${otsLabel} key signs the`, 'start', 'label ots-label');
+  g.text(leaf.x + 10, leaf.y + 28, 'WOTS key signs the', 'start', 'label ots-label');
   g.text(leaf.x + 10, leaf.y + 42, 'FORS public key', 'start', 'label ots-label');
 
-  const forest = drawForest(g, { k, a, plusC: forsPlusC, left, right, top, bx: W - 100, pkLabel: '' });
+  const forest = drawForest(g, { k, a, plusC: false, left, right, top, bx: W - 100, pkLabel: '' });
   g.text(pkX + 16, top + 4, 'FORS public key', 'start');
   g.text(pkX, forest.baseY + 84, 'FORS signs the message digest', 'middle', 'label ots-label');
   return { svg: g.toString(), width: W, height: forest.bottom + 20 };
@@ -287,8 +227,8 @@ function sphincsSvg(hp, d, k, a, forsPlusC, otsLabel) {
 export function sphincsDiagram() {
   return {
     get drawing() {
-      const { hp, d, k, a, forsPlusC, wotsPlusC } = this.state;
-      return sphincsSvg(hp, d, k, a, forsPlusC, wotsPlusC ? 'WOTS+C' : 'WOTS');
+      const { hp, d, k, a } = this.state;
+      return sphincsSvg(hp, d, k, a);
     },
   };
 }

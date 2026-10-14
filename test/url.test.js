@@ -56,8 +56,8 @@ test('a scheme on its defaults has no query string', () => {
 
 test('only the parameters that differ from the defaults are written', () => {
   const defaults = initialState(sphincs.parameters);
-  const query = stateToQuery(sphincs.parameters, { ...defaults, d: 3, wotsPlusC: true }, defaults);
-  assert.equal(query, '?d=3&wotsPlusC=true');
+  const query = stateToQuery(sphincs.parameters, { ...defaults, d: 3, k: 20 }, defaults);
+  assert.equal(query, '?d=3&k=20');
 });
 
 test('the presentation flag is kept and stale parameters are dropped', () => {
@@ -70,5 +70,4 @@ test('the presentation flag is kept and stale parameters are dropped', () => {
 test('values a parameter cannot take are ignored', () => {
   const read = stateFromQuery(shrincs.parameters, '?depth=abc&shape=nope&n=&sfB=3');
   assert.deepEqual(read, { sfB: 3 });
-  assert.deepEqual(stateFromQuery(sphincs.parameters, '?wotsPlusC=yes&forsPlusC=true'), { forsPlusC: true });
 });
