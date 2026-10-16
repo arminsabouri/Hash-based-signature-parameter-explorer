@@ -27,15 +27,6 @@ test('a one-layer hypertree is an XMSS tree', () => {
   assert.equal(b.keygenCompressions, a.keygenCompressions);
 });
 
-test('a balanced FXMSS tree is an XMSS tree', () => {
-  const a = derive(xmss, { ...OTS, h: 8 });
-  const b = derive(fxmss, { ...OTS, shape: 'BXMSS', depth: 8 });
-  assert.equal(b.sizes.sig, a.sizes.sig);
-  assert.equal(b.sizes.cache, a.sizes.cache);
-  assert.equal(b.verifyCompressions, a.verifyCompressions);
-  assert.equal(b.keygenCompressions, a.keygenCompressions);
-});
-
 test('an unbalanced FXMSS tree grows one node per signature', () => {
   const d = derive(fxmss, { ...OTS, shape: 'UXMSS', depth: 20 });
   // Signature q uses a leaf at depth q, so each step adds one n-bit node.

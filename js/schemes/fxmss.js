@@ -4,14 +4,12 @@ import { bytes } from '../scheme.js';
 import {
   OTS, TREE, blockSpace, otsSearch, treeBudget, treeCosts, treeGroups, treeKeys,
 } from '../common-results.js';
-import { balancedTreeSvg, bracket, drawLeafChains, svg } from '../draw.js';
+import { bracket, drawLeafChains, svg } from '../draw.js';
 import { deriveSingleTree, singleTreeHashTooltip, singleTreeSignature } from './xmss.js';
 
-// FXMSS with WOTS+C leaves, the stateful component of SHRINCS. The tree
-// structure is a shape, UXMSS (unbalanced, left-leaning) or BXMSS (balanced),
-// and a depth: the distance from the root to the deepest leaf.
-
-const MAX_DEPTH = { UXMSS: 255, BXMSS: 64 };
+// FXMSS with WOTS+C leaves, the stateful component of SHRINCS, in its UXMSS
+// shape (unbalanced, left-leaning). The balanced BXMSS shape is the XMSS tab.
+// The depth is the distance from the root to the deepest leaf.
 
 export default {
   id: 'fxmss',
@@ -21,15 +19,9 @@ export default {
 
   parameters: [
     {
-      key: 'shape', type: 'select', options: ['UXMSS', 'BXMSS'], default: 'UXMSS', group: TREE,
-      label: 'Shape',
-      tooltip: 'UXMSS places one leaf at each depth from 1 to \\(\\mathrm{depth}\\), plus a second leaf at the deepest level, so signatures grow by one node each. BXMSS places all \\(2^{\\mathrm{depth}}\\) leaves at the same depth, so every signature has the same size.',
-    },
-    {
-      key: 'depth', type: 'range', min: 1, max: (s) => MAX_DEPTH[s.shape], step: 1, group: TREE,
-      default: (s) => (s.shape === 'UXMSS' ? 255 : 8), resetOn: ['shape'],
+      key: 'depth', type: 'range', min: 1, max: 255, step: 1, default: 255, group: TREE,
       label: 'Depth',
-      tooltip: 'Distance from the root to the deepest leaf. SHRINCS encodes it in one byte, up to 255, and leaf indexes in 64 bits.',
+      tooltip: 'Distance from the root to the deepest leaf, encoded in one byte, up to 255. UXMSS places one leaf at each depth from 1 to \\(\\mathrm{depth}\\), plus a second leaf at the deepest level, so signatures grow by one node each. Leaf indexes are encoded in 64 bits.',
     },
     ...wotsC.parameters(OTS),
   ],
@@ -37,11 +29,9 @@ export default {
   // Sizes and verification are for the deepest leaf. `sigAt` gives the
   // signature size for a leaf at a given depth.
   derive(state) {
-    const { depth, shape, n } = state;
+    const { depth, n } = state;
     const ots = wotsC.model({ ...state, compressed: true });
-    const tree = shape === 'UXMSS'
-      ? merkleTree.unbalancedModel({ depth, n }, ots)
-      : merkleTree.model({ h: depth, n }, ots);
+    const tree = merkleTree.unbalancedModel({ depth, n }, ots);
     const d = deriveSingleTree(state, tree);
     const { index, R, ots: otsBits } = d.sizes;
     return { ...d, sigAt: (leafDepth) => index + R + otsBits + leafDepth * n };
@@ -50,14 +40,14 @@ export default {
   results: [
     treeKeys('Every node of the tree, kept by a signer that avoids rebuilding it on each signature.'),
     {
-      ...singleTreeSignature('The tuple \\((i, R, \\sigma_{\\mathrm{OTS}}, \\mathrm{AuthPath}_i)\\) for a leaf at the full depth, which has the longest authentication path. In UXMSS, shallower leaves have one \\(n\\)-bit node less per level; the visualization gives the size for each signature.'),
+      ...singleTreeSignature('The tuple \\((i, R, \\sigma_{\\mathrm{OTS}}, \\mathrm{AuthPath}_i)\\) for a leaf at the full depth, which has the longest authentication path. Shallower leaves have one \\(n\\)-bit node less per level; the visualization gives the size for each signature.'),
       heading: 'Signature (deepest leaf)',
     },
     otsSearch('The WOTS+C counter search on the message digest. WC search is the number of trials that suffices except with probability \\(2^{-30}\\).'),
     ...treeCosts(`${singleTreeHashTooltip} Verification is for the deepest leaf.`, 'tree'),
     treeBudget(
-      'One per leaf: \\(\\mathrm{depth} + 1\\) for UXMSS and \\(2^{\\mathrm{depth}}\\) for BXMSS. Reusing a leaf for a second message breaks the security of its WOTS+C key.',
-      'The signer stores the number of signatures issued and increments it before releasing each signature. SHRINCS requires that it never decrements and is never restored from a backup.',
+      'One per leaf, \\(\\mathrm{depth} + 1\\). Reusing a leaf for a second message breaks the security of its WOTS+C key.',
+      'The signer stores the number of signatures issued and increments it before releasing each signature. It must never decrement and must never be restored from a backup.',
     ),
     blockSpace,
   ],
@@ -116,10 +106,7 @@ export function fxmssTree() {
   return {
     get drawing() {
       const { l, w } = this.derived;
-      const { depth } = this.state;
-      return this.state.shape === 'UXMSS'
-        ? unbalancedSvg(depth, l, w, this.derived.sigAt)
-        : balancedTreeSvg({ h: depth, lines: [`depth = ${depth}`], l, w, compact: true });
+      return unbalancedSvg(this.state.depth, l, w, this.derived.sigAt);
     },
   };
 }

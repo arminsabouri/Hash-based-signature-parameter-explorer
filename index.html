@@ -94,7 +94,7 @@
         It exists to make the trade-offs between them easier to discuss.
         Figures can be cross-checked against the
         <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
-        scripts. Please note that all results are worst-case estimations. e.g un-balanced (BXMSS) tree assumes we are opening the last leaf. 
+        scripts. Please note that all results are worst-case estimations. e.g un-balanced tree assumes we are opening the last leaf. 
       </p>
     </section>
 
@@ -384,14 +384,12 @@
     <section class="scheme" x-data="scheme('fxmss')" x-show="selected === 'fxmss'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
-        FXMSS is the stateful component of SHRINCS: a single Merkle tree of WOTS+C leaves whose structure the
-        signer chooses at key generation, as a <strong>\(\boldsymbol{\mathbf{shape}}\)</strong> and a
-        <strong>\(\boldsymbol{\mathbf{depth}}\)</strong>. The verifier recomputes the root from the WOTS+C
-        signature, the leaf position, and the authentication path, so it accepts any structure. In UXMSS the
-        leaf for signature \(q\) sits at depth \(\min(q, \mathrm{depth})\), giving
-        <strong>\(\boldsymbol{\mathrm{depth} + 1}\)</strong> signatures whose authentication paths grow by one
-        node each. In BXMSS all <strong>\(\boldsymbol{2^{\mathrm{depth}}}\)</strong> leaves sit at the full depth.
-        Each leaf signs once, so the signer keeps a state counter.
+        FXMSS is a single Merkle tree of WOTS+C leaves whose
+        <strong>\(\boldsymbol{\mathbf{depth}}\)</strong> the signer chooses at key generation. The verifier
+        recomputes the root from the WOTS+C signature, the leaf position, and the authentication path, so it
+        accepts any structure. In UXMSS the leaf for signature \(q\) sits at depth \(\min(q, \mathrm{depth})\),
+        giving <strong>\(\boldsymbol{\mathrm{depth} + 1}\)</strong> signatures whose authentication paths grow by
+        one node each. Each leaf signs once, so the signer keeps a state counter.
       </p>
 
       <div class="explorer">
