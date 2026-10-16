@@ -182,10 +182,6 @@ main:has(.scheme) { max-width: 80rem; }
 .ellipsis-cell { width: 1.5rem; }
 .col-index { font-size: 0.7rem; font-family: ui-monospace, monospace; }
 
-@media (max-width: 60rem) {
-  .explorer { grid-template-columns: minmax(0, 1fr); }
-}
-
 /* Narrow screens */
 h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 .results dl { grid-template-columns: minmax(0, 1fr) auto; }
@@ -486,6 +482,19 @@ button.wots-digit { cursor: pointer; }
 /* Results with one column per signing path. */
 /* A wider results column, for the panels that carry two value columns. */
 .explorer.wide-results { grid-template-columns: 15rem minmax(0, 1fr) 24rem; }
+
+/* Parameters and results side by side, the visualization below them. Sits
+   after .wide-results so it overrides that three-column rule. */
+@media (max-width: 60rem) {
+  .explorer, .explorer.wide-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "parameters results" "visualization visualization";
+    gap: 0.75rem;
+  }
+  .explorer > .parameters { grid-area: parameters; }
+  .explorer > .results { grid-area: results; }
+  .explorer > .visualization { grid-area: visualization; }
+}
 
 .results.two-columns .result-row {
   display: grid;
