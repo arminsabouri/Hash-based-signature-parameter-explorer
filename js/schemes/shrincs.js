@@ -13,6 +13,11 @@ import { drawForest, drawHypertree, drawTree, annotateTree, bracket, svg } from 
 // A signature from either component passes verification. Defaults are the
 // parameter values given in the SHRINCS specification.
 
+// The WOTS+C settings the SHRINCS specification fixes: no zero-chains, the
+// target sum at the center, and a 16-bit counter.
+const SF_Z = 0;
+const SF_R = 16;
+
 const SF = 'Stateful';
 const SL = 'Stateless';
 
@@ -43,7 +48,8 @@ const digestBits = ({ k, a, hp, d }) =>
 // verification are for the deepest leaf.
 function stateful(state) {
   const { n, depth, shape } = state;
-  const ots = wotsC.model({ n, b: state.sfB, z: state.sfZ, S: state.sfS, r: state.sfR, compressed: true });
+  const b = state.sfB;
+  const ots = wotsC.model({ n, b, z: SF_Z, S: wotsC.centerSum({ n, b, z: SF_Z }), r: SF_R, compressed: true });
   const tree = shape === 'UXMSS'
     ? merkleTree.unbalancedModel({ depth, n }, ots)
     : merkleTree.model({ h: depth, n }, ots);
@@ -53,7 +59,7 @@ function stateful(state) {
   const sizes = {
     index: 8 * Math.ceil(Math.ceil(Math.log2(tree.leaves)) / 8),
     R: n,
-    counter: state.sfR,
+    counter: SF_R,
     chains: ots.l * n,
     authPath: tree.sizes.authPath,
   };
@@ -137,9 +143,9 @@ const SERIES = [
   path(SL, 'var(--c-ca6702)', (d) => d.sl),
 ];
 
-// The knobs that tune the WOTS+C counter search, held at their defaults when
-// the endpoints are worked out.
-export const SEARCH_KEYS = ['sfZ', 'sfS', 'sfR'];
+// The WOTS+C counter search has no knobs here, so none is held when the
+// endpoints are worked out.
+export const SEARCH_KEYS = [];
 
 const AXIS_SPANS = [
   [10, 343169],
@@ -171,16 +177,6 @@ const scheme = {
       tooltip: 'Distance from the root to the deepest leaf. SHRINCS sets the maximum depth of a WOTS+C leaf to 255 and encodes the shape and depth in the secret key.',
     },
     { ...pick(wotsCParams, ['b'])[0], key: 'sfB' },
-    { ...pick(wotsCParams, ['z'])[0], key: 'sfZ', max: (s) => Math.min(8, Math.ceil(s.n / s.sfB) - 1) },
-    {
-      ...pick(wotsCParams, ['S'])[0], key: 'sfS', resetOn: ['n', 'sfB', 'sfZ'],
-      max: (s) => (Math.ceil(s.n / s.sfB) - s.sfZ) * (2 ** s.sfB - 1),
-      default: (s) => Math.ceil(((Math.ceil(s.n / s.sfB) - s.sfZ) * (2 ** s.sfB - 1)) / 2),
-    },
-    {
-      ...pick(wotsCParams, ['r'])[0], key: 'sfR', min: 8, max: 64, step: 8, default: 16,
-      tooltip: 'Size of the WOTS+C counter carried in the signature. SHRINCS uses 16 bits.',
-    },
     { ...pick(wotsCParams, ['b'])[0], key: 'slB', group: SL },
     {
       key: 'd', type: 'range', min: 1, max: 32, step: 1, default: 5, group: SL,

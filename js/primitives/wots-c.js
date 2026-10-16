@@ -5,7 +5,7 @@ import { digitSumDistribution } from './wots.js';
 
 export const len1Of = ({ n, b }) => Math.ceil(n / b);
 export const chainsOf = (state) => len1Of(state) - state.z;
-const centerSum = (state) => Math.ceil((chainsOf(state) * (2 ** state.b - 1)) / 2);
+export const centerSum = (state) => Math.ceil((chainsOf(state) * (2 ** state.b - 1)) / 2);
 
 export function parameters(group) {
   return [
