@@ -8,8 +8,8 @@ import { bracket, drawLeafChains, svg } from '../draw.js';
 import { deriveSingleTree, singleTreeHashTooltip, singleTreeSignature } from './xmss.js';
 
 // FXMSS with WOTS+C leaves, the stateful component of SHRINCS, in its UXMSS
-// shape (unbalanced, left-leaning). The balanced BXMSS shape is the XMSS tab.
-// The depth is the distance from the root to the deepest leaf.
+// shape (unbalanced, left-leaning). The depth is the distance from the root
+// to the deepest leaf.
 
 export default {
   id: 'fxmss',

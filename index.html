@@ -86,15 +86,13 @@
         component.
       </p>
       <p class="default-only">
-        These schemes are assembled from a small set of building blocks: one-time signatures such as WOTS,
-        few-time signatures such as FORS, and Merkle trees that combine them. Each exposes parameters.
-        This site lets you adjust those parameters and see how they change signature size, public key size,
-        signing and verification cost, statefulness, and signature budget, in terms of block space and
-        transaction throughput. This site does not advocate for a particular post-quantum scheme.
-        It exists to make the trade-offs between them easier to discuss.
+        These schemes are built from one-time signatures such as WOTS, few-time signatures such as FORS, and
+        Merkle trees that combine them. Adjust their parameters to see how signature size, public key size,
+        signing and verification cost, statefulness, and signature budget change, and what that means for block
+        space and transaction throughput. The site takes no position on which scheme to use.
         Figures can be cross-checked against the
         <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
-        scripts. Please note that all results are worst-case estimations. e.g un-balanced tree assumes we are opening the last leaf. 
+        scripts. All figures are worst case. For example, an unbalanced tree assumes the deepest leaf.
       </p>
     </section>
 
@@ -195,17 +193,17 @@
         base-\(w\) digits \(b_i\), followed by the \(\mathrm{len}_2\) base-\(w\) digits of the checksum
         <strong>\(\boldsymbol{C = \sum_i (w - 1 - b_i)}\)</strong>. Chain \(i\) starts at a secret value \(sk_i\) and takes
         \(w - 1\) hash calls to reach \(pk_i\). The signature reveals the value at position <strong>\(\boldsymbol{b_i}\)</strong> of each chain, and
-        the verifier completes the remaining <strong>\(\boldsymbol{w - 1 - b_i}\)</strong> steps. Any other message has at least one digit lower
-        than in the signed one, so a forgery needs a chain value earlier than the one revealed.
+        the verifier completes the remaining <strong>\(\boldsymbol{w - 1 - b_i}\)</strong> steps. Raising a message digit lowers the
+        checksum, so a forger would have to run a checksum chain backward.
       </p>
 
       <p class="scheme-intro" x-show="state.plusC">
-        WOTS+C replaces the checksum chains of WOTS with a search. The signer increments a counter until the
-        digest <strong>\(\boldsymbol{d}\)</strong>, one hash call on \(m \,\|\, \mathbf{count}\), written as \(\mathrm{len}_1\) base-\(w\)
-        digits \(a_i\), has its first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits summing to <strong>\(\boldsymbol{S_{w,n}}\)</strong> and its last
-        \(z\) digits equal to zero. The verifier checks both conditions, so the signature carries \(l\) chain
-        values and the counter. Raising any digit forces another to fall, so a forgery on a new digest needs a chain
-        value earlier than the one revealed.
+        WOTS+C replaces the checksum chains of WOTS with a search. The signer hashes \(m \,\|\, \mathbf{count}\)
+        into a digest <strong>\(\boldsymbol{d}\)</strong> of \(\mathrm{len}_1\) base-\(w\) digits \(a_i\), and increments
+        the counter until the first <strong>\(\boldsymbol{l = \mathbf{len}_1 - z}\)</strong> digits sum to
+        <strong>\(\boldsymbol{S_{w,n}}\)</strong> and the last \(z\) are zero. The verifier checks both conditions, so the
+        signature carries \(l\) chain values and the counter. With the sum fixed, raising one digit lowers another,
+        which needs an earlier chain value.
       </p>
 
       <div class="explorer">
@@ -330,10 +328,10 @@
         XMSS authenticates <strong>\(\boldsymbol{2^h}\)</strong> WOTS+C public keys as the leaves of a Merkle
         tree of height \(h\), and the root is the public key. To sign, the signer takes the next unused leaf
         \(i\), signs the randomized message digest with that leaf's WOTS+C key, and attaches the authentication
-        path: the <strong>\(\boldsymbol{h}\)</strong> sibling nodes from the leaf to the root. The signature is
+        path, the <strong>\(\boldsymbol{h}\)</strong> sibling nodes from the leaf to the root. The signature is
         <strong>\(\boldsymbol{(i, R, \sigma_{\mathbf{OTS}}, \mathbf{AuthPath}_i)}\)</strong>. The verifier
         recomputes the leaf from \(\sigma_{\mathrm{OTS}}\), hashes up the path, and compares the result with the
-        root. Each leaf signs once, so the signer keeps state: the index of the next unused leaf.
+        root. Each leaf signs once, so the signer stores the index of the next unused leaf.
       </p>
 
       <div class="explorer">
@@ -361,7 +359,7 @@
         bottom-layer WOTS+C key signs the randomized message digest. The signature holds the leaf index \(i\),
         the randomness \(R\), and for each layer <strong>\(\boldsymbol{(\sigma_{\mathbf{OTS}}, \mathbf{AuthPath})}\)</strong>.
         The verifier recomputes each layer's root from the one below and compares the top-layer root with the
-        public key. Each bottom-layer leaf signs once, so the signer keeps state: the index of the next unused leaf.
+        public key. The signer stores the next unused bottom-layer leaf index.
       </p>
 
       <div class="explorer">
@@ -384,12 +382,10 @@
     <section class="scheme" x-data="scheme('fxmss')" x-show="selected === 'fxmss'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
-        FXMSS is a single Merkle tree of WOTS+C leaves whose
-        <strong>\(\boldsymbol{\mathbf{depth}}\)</strong> the signer chooses at key generation. The verifier
-        recomputes the root from the WOTS+C signature, the leaf position, and the authentication path, so it
-        accepts any structure. In UXMSS the leaf for signature \(q\) sits at depth \(\min(q, \mathrm{depth})\),
-        giving <strong>\(\boldsymbol{\mathrm{depth} + 1}\)</strong> signatures whose authentication paths grow by
-        one node each. Each leaf signs once, so the signer keeps a state counter.
+        FXMSS is an unbalanced Merkle tree (UXMSS) of WOTS+C leaves whose
+        <strong>\(\boldsymbol{\mathbf{depth}}\)</strong> the signer chooses at key generation. Signature \(q\) uses a
+        leaf at depth \(\min(q, \mathrm{depth})\), so signatures grow by one node up to the full depth. The key holds
+        <strong>\(\boldsymbol{\mathrm{depth} + 1}\)</strong> signatures, and the signer stores the next unused leaf index.
       </p>
 
       <div class="explorer">
@@ -411,7 +407,7 @@
     <section class="scheme" x-data="scheme('fors')" x-show="selected === 'fors'">
       <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
       <p class="scheme-intro">
-        FORS (Forest of Random Subsets) is a few-time signature: <strong>\(\boldsymbol{k}\)</strong> Merkle trees of
+        FORS (Forest of Random Subsets) is a few-time signature made of <strong>\(\boldsymbol{k}\)</strong> Merkle trees of
         height <strong>\(\boldsymbol{a}\)</strong> whose leaves are secret values, with the public key one
         hash call on the \(k\) roots. The randomized message digest is split into \(k\) indices of \(a\) bits,
         and the signature reveals the indexed leaf of each tree with its authentication path. Each signature
@@ -442,8 +438,8 @@
       <p class="scheme-intro">
         <strong>TL;DR:</strong> Reusing a WOTS key exposes values on every chain, which drops its security from
         about 128 bits to a few dozen. HG-WOTS hides most of its groups behind a group chain in each signature, so
-        groups that stayed hidden in earlier signatures remain unexposed, and the key can sign a few times with
-        security falling gradually rather than all at once.
+        groups that stayed hidden in earlier signatures remain unexposed, and the key can sign a few times while
+        its security falls gradually.
       </p>
       <p class="scheme-intro">
         HG-WOTS splits the hash chains of a one-time key into <strong>\(\boldsymbol{k}\)</strong> groups of
@@ -456,9 +452,8 @@
         The distances to the chain ends add up to a fixed total, <strong>\(\boldsymbol{d_g}\)</strong> in each
         revealed group and <strong>\(\boldsymbol{d_h}\)</strong> across the hidden groups. Moving one node
         forward to sign a different message would force another node backward, which would mean inverting the
-        hash, so no checksum chains are needed. A group that stays hidden in every past signature keeps its
-        chains unexposed, and its group chain carries message bits, so a key can sign more than one message,
-        and the forgery probability grows with the number of signatures <strong>\(\boldsymbol{q}\)</strong>.
+        hash, so no checksum chains are needed. Each group chain carries message bits, and the forgery
+        probability grows with the number of signatures <strong>\(\boldsymbol{q}\)</strong>.
       </p>
 
       <div class="explorer">
@@ -492,10 +487,9 @@
       <p class="scheme-intro">
         HagGrid nests HG-WOTS. In HG-WOTS a group holds plain hash chains; in HagGrid a unit holds smaller
         units, each with its own chain running up to its parent, repeated over several levels down to a bottom
-        group of chains. At every level the signature <strong>hides all units but one</strong>, sending one node on
-        each of their chains at a position the message picks, and <strong>opens the remaining one</strong>, so
-        every level carries message bits. In the opened bottom group it sends one node on each chain. A forger
-        needs earlier signatures that opened the same unit at every level.
+        group of chains. At every level the signature hides all units but one, sending one node on
+        each of their chains at a position the message picks, and opens the remaining one, so
+        every level carries message bits. In the opened bottom group it sends one node on each chain.
       </p>
 
       <div class="explorer">
@@ -527,7 +521,7 @@
         leaf signature for each with one Merkle multiproof up to the root. A separate field of the message hash
         must pass a grinding threshold. The signer keeps no state and rebuilds every leaf for each signature, so
         leaves are picked again across signatures, and the security after <strong>\(\boldsymbol{r}\)</strong>
-        signatures depends on how well a leaf survives reuse.
+        signatures depends on the security of a leaf key after reuse.
       </p>
 
       <div class="explorer">
@@ -572,7 +566,7 @@
         signs the root below it, as in XMSS<sup>MT</sup>. The signature is
         <strong>\(\boldsymbol{(R, \sigma_{\mathbf{FORS}}, \sigma_{\mathbf{HT}})}\)</strong>. Because the digest
         picks the leaf, the signer keeps no state, and the same FORS key pair can be selected more than once.
-        The OTS is WOTS or WOTS+C, and the few-time signature is FORS or FORS+C.
+        The OTS is WOTS.
       </p>
       <p class="hint spec-link">
         Specification:
@@ -601,9 +595,9 @@
       <p class="scheme-intro">
         SHRINCS combines two hash-based signature schemes under one public key, and a signature from
         either one passes verification. The <strong>stateful</strong> component is an FXMSS tree of
-        WOTS+C leaves, which the signer uses as its primary path; the <strong>stateless</strong>
-        component is SLH-DSA with a parameter set that is not among those standardized in FIPS 205,
-        which the signer falls back to when signing state is unavailable. Each component contributes a
+        WOTS+C leaves, and the <strong>stateless</strong> component is SLH-DSA with a non-standard parameter
+        set. The signer uses the stateful component and falls back to the stateless one when signing state is
+        unavailable. Each component contributes a
         root to the public key
         <strong>\(\boldsymbol{\mathrm{pk\_seed} \,\|\, \mathrm{sl\_root} \,\|\, \mathrm{sf\_root}}\)</strong>,
         and the first byte of a signature, the indicator byte, tells the verifier which component signed.
@@ -638,13 +632,12 @@
         both instances. The <strong>compact</strong> instance is parameterized for
         <strong>\(\boldsymbol{q_s = n_{\text{dev}} \cdot n_{\text{dsig}}}\)</strong> signatures, where
         \(n_{\text{dev}}\) is an upper bound on the number of device initializations and \(n_{\text{dsig}}\) the
-        number of signatures each device makes through it; the <strong>fallback</strong> instance has a large
-        \(q_s\). A device loaded from the seed derives both key pairs and keeps per-key state: it signs through the
+        number of signatures each device makes through it. The <strong>fallback</strong> instance has a large
+        \(q_s\). A device loaded from the seed derives both key pairs and keeps per-key state, signing through the
         compact instance until it has made \(n_{\text{dsig}}\) signatures, then through the fallback instance.
         A signature is a SPHINCS+ signature under the selected instance and the public key of the other instance,
-        the sibling public key. The compact parameters below start at \((k, a, h, d) = (8, 17, 12, 1)\),
-        \(w = 16\), \(S_{w,n} = 240\) with WOTS+C and PORS+FP, a row of the post's table, and the fallback
-        parameters at SLH-DSA-SHA2-128s.
+        the sibling public key. The compact instance uses WOTS+C and PORS+FP. The parameters below start at the
+        values in the Delving Bitcoin post, with the fallback at SLH-DSA-SHA2-128s.
       </p>
       <p class="hint spec-link">
         Source:
