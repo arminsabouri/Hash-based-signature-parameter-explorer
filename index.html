@@ -738,14 +738,22 @@
     <template x-for="(group, g) in config.results" :key="g">
       <div x-show="!group.show || group.show(derived)" x-data="{ active: null }">
         <template x-if="config.columns && g === headsIndex">
-          <dl class="column-heads">
-            <div class="result-row">
-              <dt></dt>
-              <template x-for="c in config.columns" :key="c">
-                <dd :style="`--group-color: ${config.groups[c]}`" x-text="c"></dd>
+          <div>
+            <div class="drag-series column-toggle">
+              <template x-for="(c, i) in config.columns" :key="c">
+                <button type="button" :aria-pressed="column === i" @click="column = i"
+                        :style="`--group-color: ${config.groups[c]}`" x-text="c"></button>
               </template>
             </div>
-          </dl>
+            <dl class="column-heads">
+              <div class="result-row">
+                <dt></dt>
+                <template x-for="(c, i) in config.columns" :key="c">
+                  <dd :class="i !== column && 'other-column'" :style="`--group-color: ${config.groups[c]}`" x-text="c"></dd>
+                </template>
+              </div>
+            </dl>
+          </div>
         </template>
         <template x-if="group.heading">
           <h4><span x-text="group.heading"></span>
@@ -810,7 +818,8 @@
                   <dd x-katex="row.value(derived)"></dd>
                 </template>
                 <template x-for="(v, c) in (row.values || [])" :key="c">
-                  <dd :style="config.columns && `--group-color: ${config.groups[config.columns[c]]}`"
+                  <dd :class="c !== column && 'other-column'"
+                      :style="config.columns && `--group-color: ${config.groups[config.columns[c]]}`"
                       x-katex="v(derived)"></dd>
                 </template>
               </div>

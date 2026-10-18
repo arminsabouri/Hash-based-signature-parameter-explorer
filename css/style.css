@@ -310,6 +310,8 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 /* WOTS chains */
 .wots-chains { display: flex; flex-direction: column; gap: 0.5rem; }
 .wots-row, .wots-row-inner { display: flex; align-items: center; gap: 0.5rem; }
+.wots-row-inner { flex: 1; min-width: 0; }
+.wots-row-inner > .wots-index, .wots-row-inner > .wots-digit { flex-shrink: 0; }
 .wots-row { min-height: 1.6rem; }
 .wots-header { padding-left: 10.85rem; min-height: 0; }
 .wots-header .wots-index, .wots-header .wots-digit { display: none; }
@@ -331,8 +333,9 @@ button.wots-digit { cursor: pointer; }
   position: relative;
   display: flex;
   gap: 0.2rem;
-  width: 22rem;
-  max-width: 100%;
+  /* A flex basis rather than a width, so the track shrinks on narrow screens. */
+  flex: 0 1 22rem;
+  min-width: 0;
   height: 1.2rem;
 }
 .wots-header .wots-track { justify-content: space-between; height: auto; font-size: 0.8rem; }
@@ -363,7 +366,7 @@ button.wots-digit { cursor: pointer; }
   z-index: 1;
 }
 .chain-group { display: flex; align-items: stretch; gap: 0.35rem; }
-.chain-rows { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.chain-rows { flex: 1; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
 .chain-bracket {
   display: flex;
   align-items: center;
@@ -535,7 +538,7 @@ button.wots-digit { cursor: pointer; }
 }
 .tradeoff .radar-point { fill: var(--shape-color, var(--c-ca6702)); }
 /* Which shape a drag grabs, shown only where the diagram draws more than one. */
-.drag-series { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; }
+.drag-series { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.75rem; }
 .drag-series button {
   font: inherit;
   color: var(--color);
@@ -550,6 +553,16 @@ button.wots-digit { cursor: pointer; }
   opacity: 1;
   border-color: var(--group-color);
   box-shadow: inset 2px 0 0 var(--group-color);
+}
+
+/* Narrow screens show one value column at a time, picked with a toggle. */
+.column-toggle { display: none; margin-top: 0.75rem; }
+@media (max-width: 60rem) {
+  .column-toggle { display: flex; }
+  /* Back to the single-column row, which wraps a value under a long label. */
+  .results.two-columns .result-row { display: flex; }
+  .results.two-columns .result-row dd { margin-left: auto; }
+  .results.two-columns .other-column { display: none; }
 }
 
 /* The vertices are draggable, so the pointer says so over the diagram. */

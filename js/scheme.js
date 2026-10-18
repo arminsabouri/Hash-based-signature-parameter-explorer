@@ -121,6 +121,9 @@ export function scheme(config) {
     // so the choice is made with a control rather than by the pointer.
     dragSeries: 0,
 
+    // Which value column narrow screens show, where both do not fit.
+    column: 0,
+
     // The pointer in the diagram's own coordinates, which the viewBox scales.
     tradeoffPoint(event) {
       const ctm = event.currentTarget.getScreenCTM();
