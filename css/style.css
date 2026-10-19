@@ -219,7 +219,7 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
   font-size: 0.8rem;
   line-height: 1.4;
 }
-.explorer :is(label, dt, h4):has(.tooltip-icon:hover, .tooltip-icon:focus-visible) .tooltip { display: block; }
+.explorer :is(label, dt, h4):has(.tooltip-icon:hover, .tooltip-icon:focus) .tooltip { display: block; }
 .results { position: relative; }
 .results .tooltip {
   top: auto;
@@ -497,6 +497,16 @@ button.wots-digit { cursor: pointer; }
   .explorer > .parameters { grid-area: parameters; }
   .explorer > .results { grid-area: results; }
   .explorer > .visualization { grid-area: visualization; }
+  /* The columns are too narrow for a tooltip, so it spans the bottom of the screen. */
+  .explorer .tooltip {
+    position: fixed;
+    top: auto;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
 }
 
 .results.two-columns .result-row {
