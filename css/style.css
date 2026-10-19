@@ -307,6 +307,11 @@ h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); overflow-wrap: anywhere; }
 }
 .sub-tabs button[aria-selected="true"] { opacity: 1; }
 
+/* The HG-WOTS family, set apart from the other building blocks. */
+.sub-tabs button.hg { background: var(--c-ae2012); border-color: var(--c-ae2012); color: var(--c-e9d8a6); }
+.sub-tabs button.hg[aria-selected="true"] { background: var(--c-9b2226); border-color: var(--c-9b2226); }
+.sub-tabs button:not(.hg) + button.hg { margin-left: 0.75rem; }
+
 /* WOTS chains */
 .wots-chains { display: flex; flex-direction: column; gap: 0.5rem; }
 .wots-row, .wots-row-inner { display: flex; align-items: center; gap: 0.5rem; }

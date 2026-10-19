@@ -119,11 +119,11 @@
               @click="show('fxmss')">FXMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="show('fors')">FORS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'hg-wots'" x-show="showHgt"
+      <button type="button" role="tab" class="hg" :aria-selected="selected === 'hg-wots'" x-show="showHgt"
               @click="show('hg-wots')">HG-WOTS</button>
-      <button type="button" role="tab" :aria-selected="selected === 'haggrid'" x-show="showHgt"
+      <button type="button" role="tab" class="hg" :aria-selected="selected === 'haggrid'" x-show="showHgt"
               @click="show('haggrid')">HagGrid</button>
-      <button type="button" role="tab" :aria-selected="selected === 'hgt'" x-show="showHgt"
+      <button type="button" role="tab" class="hg" :aria-selected="selected === 'hgt'" x-show="showHgt"
               @click="show('hgt')">HGT</button>
     </nav>
 
