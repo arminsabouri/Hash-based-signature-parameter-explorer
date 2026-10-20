@@ -11,11 +11,13 @@ import { drawForest, svg } from '../draw.js';
 // FORS and FORS+C as a standalone few-time signature, with FIPS 205 message
 // hashing. Default k and a are those of SLH-DSA-SHA2-128s.
 
+const FORS = 'FORS';
 const pow2 = (x) => `\\(2^{${x.toFixed(1)}}\\)`;
 
 export default {
   id: 'fors',
   title: 'FORS',
+  groups: { [FORS]: 'var(--c-9b2226)' },
 
   parameters: [
     ...fors.parameters(),
@@ -77,7 +79,7 @@ export default {
       bar: true,
       rows: [
         sigPart('Randomness \\(R\\)', 'R'),
-        sigPart('FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', 'fors'),
+        sigPart('FORS signature (\\(\\sigma_{\\mathrm{FORS}}\\))', 'fors', FORS),
         { label: 'Total', value: (d) => bytes(d.sizes.sig) },
       ],
     },
