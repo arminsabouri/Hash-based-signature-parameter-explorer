@@ -17,7 +17,7 @@ export const leafOf = (s) => ({
   bottom: { chains: s.s, length: s.w, sum: s.dg },
 });
 
-const pow2 = (x) => (Number.isFinite(x) ? `\\(2^{-${x.toFixed(1)}}\\)` : '?');
+export const pow2 = (x) => (Number.isFinite(x) ? `\\(2^{-${x.toFixed(1)}}\\)` : '?');
 
 // The q parameter, shared with HagGrid.
 export const qParameter = {

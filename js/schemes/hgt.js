@@ -3,7 +3,7 @@ import { num } from '../scheme.js';
 import { hashCalls, sigPart, signatureBudget } from '../common-results.js';
 import { annotateTree, drawTree, svg } from '../draw.js';
 import { clampState } from '../tradeoff.js';
-import hgWots, { leafOf as hgWotsLeafOf } from './hg-wots.js';
+import hgWots, { leafOf as hgWotsLeafOf, pow2 } from './hg-wots.js';
 import haggrid, { leafOf as hagGridLeafOf } from './haggrid.js';
 
 // HGT: a Merkle tree of N HG-WOTS or HagGrid leaves. The message hash picks K
@@ -120,6 +120,11 @@ const hgt = {
     },
     {
       ...signatureBudget(
+        {
+          label: 'Forgery probability after \\(r\\) signatures',
+          tooltip: '\\(2^{-b}\\), with \\(b\\) the bits at \\(r\\). Grinding is not included.',
+          value: (d) => pow2(d.bitsAtR),
+        },
         {
           label: 'Bits at \\(r\\)',
           tooltip: '\\(-\\log_2\\) of the probability that a fresh message hash gives a signature an attacker can compute by hashing forward from the nodes in \\(r\\) past signatures. Each signature picks \\(K\\) distinct leaves, and every picked leaf must be covered by the past signatures that picked it. Grinding is not included.',
