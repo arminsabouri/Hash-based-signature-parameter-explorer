@@ -130,6 +130,20 @@ function lnGamma(x) {
 
 const lnChoose = (n, r) => lnGamma(n + 1) - lnGamma(r + 1) - lnGamma(n - r + 1);
 
+// security.sage's per-instance term: the probability that a fresh digest
+// selects only leaves revealed by r signatures, C(min(rk, t), k) / C(t, k).
+function lnForgery({ k, a }, r) {
+  const t = leavesOf({ k, a });
+  const m = Math.min(r * k, t);
+  if (m < k) return -Infinity;
+  if (m === t) return 0;
+  let s = 0;
+  for (let i = 0; i < k; i++) s += Math.log((m - i) / (t - i));
+  return s;
+}
+
+export const forgeryLog2 = (params, q) => lnForgery(params, q) / Math.LN2;
+
 // security.sage, compute_security for PORS+FP: after q signatures spread over
 // 2^h instances, the probability that one instance was hit r times and a fresh
 // digest selects only its revealed leaves,
@@ -139,19 +153,10 @@ const lnChoose = (n, r) => lnGamma(n + 1) - lnGamma(r + 1) - lnGamma(n - r + 1);
 // terms more than 40 standard deviations below it are left out; each is below
 // 2^-1000.
 export function securityBits({ n, k, a, h }, q) {
-  const t = leavesOf({ k, a });
   const p = 2 ** -h;
   const mean = q * p;
   const lnP = Math.log(p);
   const ln1mP = Math.log1p(-p);
-  const lnForge = (r) => {
-    const m = Math.min(r * k, t);
-    if (m < k) return -Infinity;
-    if (m === t) return 0;
-    let s = 0;
-    for (let i = 0; i < k; i++) s += Math.log((m - i) / (t - i));
-    return s;
-  };
 
   const start = mean > 1e4 ? Math.max(1, Math.floor(mean - 40 * Math.sqrt(mean))) : 1;
   let lnHit = (start === 1 ? Math.log(q) : lnChoose(q, start)) + start * lnP + (q - start) * ln1mP;
@@ -159,7 +164,7 @@ export function securityBits({ n, k, a, h }, q) {
   let sigma = 0;
   for (let r = start; r <= q; r++) {
     if (r > start) lnHit += Math.log((q - r + 1) / r) + lnP - ln1mP;
-    const lnTerm = lnHit + lnForge(r);
+    const lnTerm = lnHit + lnForgery({ k, a }, r);
     sigma += Math.exp(lnTerm);
     if (r > mean && lnTerm < floor) break;
   }

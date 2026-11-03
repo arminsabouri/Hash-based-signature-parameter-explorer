@@ -7,8 +7,10 @@ import xmss from '../js/schemes/xmss.js';
 import xmssMt from '../js/schemes/xmss-mt.js';
 import fxmss from '../js/schemes/fxmss.js';
 import fors from '../js/schemes/fors.js';
+import porsFp from '../js/schemes/pors-fp.js';
 import sphincs from '../js/schemes/sphincs.js';
 import shrincs from '../js/schemes/shrincs.js';
+import shrimps from '../js/schemes/shrimps.js';
 import { bytes, derive } from './helpers.js';
 
 // The schemes share primitives, so the same structure reached two ways must
@@ -69,6 +71,14 @@ test('FORS+C drops the last tree and adds a counter', () => {
   assert.equal(c.built, 13);
   // The last tree's authentication path goes; its first leaf and the counter stay.
   assert.equal(c.sizes.fors, plain.sizes.fors - 13 * 128 + 128 + 32);
+});
+
+test("the PORS+FP tab matches SHRIMPS's compact instance", () => {
+  const s = derive(shrimps);
+  const p = derive(porsFp);
+  assert.equal(p.sizes.pors, s.cp.pors.sizes.sig, 'signature, so the same default m_max');
+  assert.equal(p.keygen.th, s.cp.pors.keygen.th, 'key generation');
+  assert.equal(p.verify.th, s.cp.pors.verify.th, 'verification');
 });
 
 test('Lamport sizes follow from the message and hash lengths', () => {

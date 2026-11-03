@@ -273,6 +273,26 @@ export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
   return { pkX, pkY, baseY, bottom: baseY + 80 };
 }
 
+// The PORS+FP tree: one tree of t leaves with k of them revealed.
+export function drawPors(g, { k, t, left, right, top, bx }) {
+  const rootY = top, baseY = top + 110, size = 10;
+  const cx = (left + right) / 2;
+  const hw = (right - left) / 2 - 8;
+  g.line(cx, rootY, cx - hw, baseY, 'edge');
+  g.line(cx, rootY, cx + hw, baseY, 'edge');
+  g.line(cx - hw, baseY, cx + hw, baseY, 'edge');
+  g.circle(cx, rootY, 7, 'tree-node');
+  const shown = Math.min(k, 12);
+  for (let j = 0; j < shown; j++) {
+    const x = cx - hw + (2 * hw) * ((j * 0.37 + 0.13) % 1);
+    g.rect(x - size / 2, baseY + 6, size, size, 'ots-node');
+  }
+  bracket(g, bx, rootY, baseY, [`t = ${t.toLocaleString()}`]);
+  g.text(bx + 8, baseY + 16, 'leaves', 'start', 'label ots-label');
+  g.text(cx, baseY + 40, `k = ${k} leaves revealed`, 'middle');
+  return { rootX: cx, rootY, bottom: baseY + 50 };
+}
+
 // A tradeoff diagram: one spoke per axis, with one shape per series drawn on
 // the same axes. Each shape carries `values` in [0, 1], one per axis, and an
 // optional name and colour; several named shapes get a legend underneath.

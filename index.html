@@ -35,7 +35,7 @@
 </head>
 <body>
   <main x-data="{
-    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'hg-wots', 'haggrid', 'hgt'],
+    blocks: ['lamport', 'wots', 'xmss', 'xmss-mt', 'fxmss', 'fors', 'pors-fp', 'hg-wots', 'haggrid', 'hgt'],
     selected: 'sphincs',
     lastBlock: 'lamport',
     // The HG-WOTS, HagGrid and HGT tabs are shown once hg is typed, or when a link opens one of them.
@@ -125,6 +125,8 @@
               @click="show('fxmss')">FXMSS + WOTS+C</button>
       <button type="button" role="tab" :aria-selected="selected === 'fors'"
               @click="show('fors')">FORS</button>
+      <button type="button" role="tab" :aria-selected="selected === 'pors-fp'"
+              @click="show('pors-fp')">PORS+FP</button>
       <button type="button" role="tab" class="hg" :aria-selected="selected === 'hg-wots'" x-show="showHgt"
               @click="show('hg-wots')">HG-WOTS</button>
       <button type="button" role="tab" class="hg" :aria-selected="selected === 'haggrid'" x-show="showHgt"
@@ -433,6 +435,38 @@
           <p class="hint">Each tree has \(2^a\) secret leaves; the filled square is the leaf a signature reveals.
             The verifier hashes it up its authentication path to the tree's root and compresses the \(k\) roots
             into the public key.</p>
+        </div>
+
+        <aside class="results" data-template="results-panel"></aside>
+      </div>
+    </section>
+
+    <section class="scheme" x-data="scheme('pors-fp')" x-show="selected === 'pors-fp'">
+      <h2 x-html="typeof config.title === 'function' ? config.title(state) : config.title"></h2>
+      <p class="scheme-intro">
+        PORS+FP is a few-time signature made of one Merkle tree of \(t = k \cdot 2^a\) secret leaves, filled
+        from the left, whose root is the public key. The randomized message digest selects
+        <strong>\(\boldsymbol{k}\)</strong> distinct leaves, and the signature reveals them with their Octopus
+        authentication set. The signer grinds the digest until that set has at most
+        <strong>\(\boldsymbol{m_{\max}}\)</strong> nodes, so every signature carries \(k + m_{\max}\) values.
+        Each signature reveals \(k\) more leaves, so the probability of a forgery grows with the number of
+        signatures <strong>\(\boldsymbol{q}\)</strong>.
+      </p>
+      <p class="hint spec-link">
+        Source:
+        <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
+      </p>
+
+      <div class="explorer">
+        <aside class="parameters" data-template="parameters-panel"></aside>
+
+        <div class="visualization" x-data="porsTree">
+          <h3>Visualization</h3>
+
+          <div data-template="tree-diagram"></div>
+
+          <p class="hint">The tree has \(t\) secret leaves; the filled squares are the \(k\) leaves a signature
+            reveals. The verifier hashes them up with the authentication set to the root.</p>
         </div>
 
         <aside class="results" data-template="results-panel"></aside>

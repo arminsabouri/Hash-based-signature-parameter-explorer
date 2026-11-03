@@ -8,7 +8,7 @@ import { compressions } from '../sha256.js';
 import { approx, bytes, num } from '../scheme.js';
 import { blockSpace, hashCalls, hashCallsNote, messageHashNote, probability, withMidstate } from '../common-results.js';
 import { axisSpans, hashCallCount, tradeoffGroup } from '../tradeoff.js';
-import { bracket, drawForest, drawHypertree, svg } from '../draw.js';
+import { drawForest, drawHypertree, drawPors, svg } from '../draw.js';
 
 // SHRIMPS, from Jonas Nick's Delving Bitcoin post "SHRIMPS: 2.5 KB post-quantum
 // signatures across multiple stateful devices": two SPHINCS+ instances under
@@ -321,26 +321,6 @@ const scheme = {
 };
 
 export default scheme;
-
-// The PORS+FP tree: one tree of t leaves with k of them revealed.
-function drawPors(g, { k, t, left, right, top, bx }) {
-  const rootY = top, baseY = top + 110, size = 10;
-  const cx = (left + right) / 2;
-  const hw = (right - left) / 2 - 8;
-  g.line(cx, rootY, cx - hw, baseY, 'edge');
-  g.line(cx, rootY, cx + hw, baseY, 'edge');
-  g.line(cx - hw, baseY, cx + hw, baseY, 'edge');
-  g.circle(cx, rootY, 7, 'tree-node');
-  const shown = Math.min(k, 12);
-  for (let j = 0; j < shown; j++) {
-    const x = cx - hw + (2 * hw) * ((j * 0.37 + 0.13) % 1);
-    g.rect(x - size / 2, baseY + 6, size, size, 'ots-node');
-  }
-  bracket(g, bx, rootY, baseY, [`t = ${t.toLocaleString()}`]);
-  g.text(bx + 8, baseY + 16, 'leaves', 'start', 'label ots-label');
-  g.text(cx, baseY + 40, `k = ${k} leaves revealed`, 'middle');
-  return { rootX: cx, rootY, bottom: baseY + 50 };
-}
 
 // Structure diagram: the two instances stacked, each a hypertree over its
 // few-time signature.
