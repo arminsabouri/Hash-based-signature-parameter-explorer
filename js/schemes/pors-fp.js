@@ -42,7 +42,7 @@ export default {
       ...mmaxParam,
       default: defaultMmax,
       resetOn: ['k', 'a'],
-      tooltip: 'The signer grinds the digest until the Octopus authentication set of the \\(k\\) selected leaves has at most \\(m_{\\max}\\) nodes. A smaller \\(m_{\\max}\\) gives a smaller signature and more grinding trials. The default is the value SPHINCS-Parameters chooses (costs.sage, compute_mmax), which compares signing against a SPHINCS+ instance; this tab takes the SHRIMPS compact instance\'s hypertree, \\(h\' = 12\\), \\(d = 1\\), WOTS+C with \\(w = 16\\) and \\(S_{w,n} = 240\\).',
+      tooltip: 'Signing grinds the digest until the authentication set has at most \\(m_{\\max}\\) nodes. Smaller \\(m_{\\max}\\) means a smaller signature but more grinding.',
     },
     {
       key: 'logq', type: 'range', min: 0, max: 20, step: 1, default: 0,
@@ -124,7 +124,7 @@ export default {
       },
       {
         label: 'Forgery probability after \\(q\\) signatures',
-        tooltip: 'Probability that a fresh digest selects only leaves revealed by \\(q\\) signatures, as security.sage in SPHINCS-Parameters bounds it: \\(\\binom{\\min(qk,\\, t)}{k} / \\binom{t}{k}\\).',
+        tooltip: 'Probability that a fresh digest selects only leaves revealed by \\(q\\) signatures: \\(\\binom{\\min(qk,\\, t)}{k} / \\binom{t}{k}\\).',
         value: (d) => pow2(d.forgeryLog2),
       },
     ),
