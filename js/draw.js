@@ -30,8 +30,9 @@ export function svg() {
 
 // Balanced tree of height h between x = left and x = right, root at y = top.
 // Draws the top three levels, elides the rest when h > 3, and draws up to
-// eight leaf slots as squares. Returns the leaf row position.
-export function drawTree(g, { h, left, right, top, level = 40, radius = 7, leafSize = 14 }) {
+// eight leaf slots as squares, styled by `leafClass` of the leaf index.
+// Returns the leaf row position.
+export function drawTree(g, { h, left, right, top, level = 40, radius = 7, leafSize = 14, leafClass = () => 'ots-node' }) {
   const leafCount = 2 ** h;
   const inner = Math.min(h, 3);
   const elided = h > 3;
@@ -62,7 +63,7 @@ export function drawTree(g, { h, left, right, top, level = 40, radius = 7, leafS
   const leafY = Y(leafRow);
   slots.forEach((k, i) => {
     if (k === null) g.text(slotX(i), leafY + 4, '…');
-    else g.rect(slotX(i) - leafSize / 2, leafY - leafSize / 2, leafSize, leafSize, 'ots-node');
+    else g.rect(slotX(i) - leafSize / 2, leafY - leafSize / 2, leafSize, leafSize, leafClass(k));
   });
 
   return { rootX: levelX(0, 0), rootY: Y(0), leafY, leafCount, slotX };
@@ -274,10 +275,17 @@ export function drawForest(g, { k, a, plusC, left, right, top, bx, pkLabel }) {
 }
 
 // The PORS+FP tree: one tree of t leaves with k of them revealed, drawn as a
-// balanced tree of height ceil(log2 t).
+// balanced tree of height ceil(log2 t). Every other drawn leaf slot is shown
+// revealed, up to k of them, at illustrative positions.
 // shortcut: leaf slots are drawn as if the tree were full, upgrade if t not a power of two needs showing.
 export function drawPors(g, { k, t, left, right, top, bx }) {
-  const tree = drawTree(g, { h: Math.ceil(Math.log2(t)), left, right, top });
+  let drawn = 0, revealed = 0;
+  const leafClass = (i) => {
+    const reveal = i < t && drawn++ % 2 === 1 && revealed < k;
+    if (reveal) revealed++;
+    return reveal ? 'ots-node' : 'cell-idle';
+  };
+  const tree = drawTree(g, { h: Math.ceil(Math.log2(t)), left, right, top, leafClass });
   bracket(g, bx, tree.rootY, tree.leafY, [`t = ${t.toLocaleString()}`]);
   g.text(bx + 8, tree.leafY + 20, 'leaves', 'start', 'label ots-label');
   g.text(tree.rootX, tree.leafY + 34, `k = ${k} leaves revealed`, 'middle');
