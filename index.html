@@ -639,7 +639,7 @@
         set. The signer uses the stateful component and falls back to the stateless one when signing state is
         unavailable. Each component contributes a
         root to the public key
-        <strong>\(\boldsymbol{\mathrm{pk\_seed} \,\|\, \mathrm{sl\_root} \,\|\, \mathrm{sf\_root}}\)</strong>,
+        <strong>\(\boldsymbol{\mathrm{pk\_seed} \,\|\, \mathrm{stateless\_root} \,\|\, \mathrm{stateful\_root}}\)</strong>,
         and the first byte of a signature, the indicator byte, tells the verifier which component signed.
         The parameters below start at the values given in the specification.
       </p>
@@ -657,8 +657,8 @@
           <div data-template="tree-diagram"></div>
 
           <p class="hint">The stateful component above and the stateless component below. A stateful
-            signature is checked against \(\mathrm{sf\_root}\), a stateless one against
-            \(\mathrm{sl\_root}\).</p>
+            signature is checked against \(\mathrm{stateful\_root}\), a stateless one against
+            \(\mathrm{stateless\_root}\).</p>
         </div>
 
         <aside class="results two-columns" data-template="results-panel"></aside>

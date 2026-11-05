@@ -216,12 +216,12 @@ const scheme = {
       rows: [
         {
           label: 'Secret key',
-          tooltip: '\\(\\mathrm{sk\\_seed} \\,\\|\\, \\mathrm{sk\\_prf} \\,\\|\\, \\mathrm{pk\\_seed} \\,\\|\\, \\mathrm{sl\\_root} \\,\\|\\, \\mathrm{sf\\_structure} \\,\\|\\, \\mathrm{sf\\_root}\\), where \\(\\mathrm{sf\\_structure}\\) is the shape byte and the depth byte. It is generated from a 48-byte seed.',
+          tooltip: '\\(\\mathrm{sk\\_seed} \\,\\|\\, \\mathrm{sk\\_prf} \\,\\|\\, \\mathrm{pk\\_seed} \\,\\|\\, \\mathrm{stateless\\_root} \\,\\|\\, \\mathrm{stateful\\_structure} \\,\\|\\, \\mathrm{stateful\\_root}\\), where \\(\\mathrm{stateful\\_structure}\\) is the shape byte and the depth byte. It is generated from a 48-byte seed.',
           value: (d) => bytes(d.sizes.sk),
         },
         {
           label: 'Public key',
-          tooltip: '\\(\\mathrm{pk\\_seed} \\,\\|\\, \\mathrm{sl\\_root} \\,\\|\\, \\mathrm{sf\\_root}\\). A stateful signature is checked against \\(\\mathrm{sf\\_root}\\), a stateless one against \\(\\mathrm{sl\\_root}\\).',
+          tooltip: '\\(\\mathrm{pk\\_seed} \\,\\|\\, \\mathrm{stateless\\_root} \\,\\|\\, \\mathrm{stateful\\_root}\\). A stateful signature is checked against \\(\\mathrm{stateful\\_root}\\), a stateless one against \\(\\mathrm{stateless\\_root}\\).',
           value: (d) => bytes(d.sizes.pk),
         },
       ],
@@ -302,7 +302,7 @@ function shrincsSvg(state) {
   const g = svg();
   const { shape, depth, d, hp, k, a } = state;
 
-  g.text(W / 2, 20, 'SHRINCS public key = pk_seed || sl_root || sf_root');
+  g.text(W / 2, 20, 'SHRINCS public key = pk_seed || stateless_root || stateful_root');
 
   // Stateful component.
   const sfTop = 76;
@@ -317,13 +317,13 @@ function shrincsSvg(state) {
     sfBottom = tree.leafY + 30;
     rootX = tree.rootX;
   }
-  g.text(rootX, sfTop - 14, 'sf_root');
+  g.text(rootX, sfTop - 14, 'stateful_root');
   g.text(80, sfBottom + 4, 'leaves are WOTS+C public keys', 'start', 'label ots-label');
 
   // Stateless component.
   const slTop = sfBottom + 54;
   const leaf = drawHypertree(g, {
-    hp, d, left: 120, right: W - 160, bx: W - 142, top: slTop, otsLabel: 'WOTS', rootLabel: 'sl_root',
+    hp, d, left: 120, right: W - 160, bx: W - 142, top: slTop, otsLabel: 'WOTS', rootLabel: 'stateless_root',
   });
   const forestTop = leaf.y + 96;
   const left = 70, right = W - 150;
