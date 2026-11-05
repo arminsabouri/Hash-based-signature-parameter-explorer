@@ -11,12 +11,15 @@ export const metricKeys = ['blockSpace', 'signCalls', 'verifyCalls', 'keygenCall
 
 // One spoke each, starting at the top and going clockwise. Block space grows
 // outward with size; the three speeds grow outward as the call count falls.
+// `max` caps a spoke's far end. The signing budget stops at 2^64, the
+// signatures per key the FIPS 205 parameter sets are designed for, so that
+// hypertrees of up to 2^640 leaves do not push the others to the centre.
 export const AXES = [
   { label: ['Block space', 'consumption'], of: (m) => m.blockSpace },
   { label: ['Signature', 'generation speed'], of: (m) => 1 / m.signCalls },
   { label: ['Verification', 'speed'], of: (m) => 1 / m.verifyCalls },
   { label: ['Key generation', 'speed'], of: (m) => 1 / m.keygenCalls },
-  { label: ['Signing budget'], of: (m) => m.budget },
+  { label: ['Signing budget'], of: (m) => m.budget, max: 2 ** 64 },
 ];
 
 // Hash calls for one operation, counting PRF and Th together.
@@ -78,7 +81,7 @@ export function axisSpans(config, series, hold) {
       });
     }
   }
-  return spans.map((s) => [s.min, s.max]);
+  return spans.map((s, i) => [s.min, Math.min(s.max, AXES[i].max ?? Infinity)]);
 }
 
 // Where a figure sits on its spoke, in [0, 1]. The figures span many orders of
