@@ -80,10 +80,10 @@
         presents those tradeoffs side by side.
       </p>
       <p class="default-only">
-        Bitcoin authorizes spending with ECDSA and Schnorr signatures over the secp256k1 curve.
-        Shor's algorithm would allow a sufficiently large quantum computer to solve the elliptic curve
-        discrete logarithm problem and forge these signatures. Hash-based signature schemes rely only on
-        properties of hash functions, which Bitcoin already depends on through SHA-256.
+        Bitcoin authorizes spending with elliptic curve cryptography. Shor's algorithm would enable a
+        cryptographically relevant quantum computer to solve the elliptic curve discrete logarithm problem and
+        forge these signatures. Hash-based signature schemes rely only on properties of hash functions, which
+        Bitcoin already depends on.
         <a href="https://eprint.iacr.org/2025/2203" target="_blank" rel="noopener">Hash-based Signature Schemes for Bitcoin</a>
         by Kudinov and Nick surveys these schemes and their parameter selection for Bitcoin, and
         <a href="https://github.com/SHRINCS/shrincs-bip/blob/main/SHRINCS.md" target="_blank" rel="noopener">SHRINCS</a>
@@ -92,13 +92,15 @@
         component.
       </p>
       <p class="default-only">
-        These schemes are built from one-time signatures such as WOTS, few-time signatures such as FORS, and
-        Merkle trees that combine them. Adjust their parameters to see how signature size, public key size,
-        signing and verification cost, statefulness, and signature budget change, and what that means for block
-        space and transaction throughput. The site takes no position on which scheme to use.
+        These constructions are built using a handful of primitives: one-time signatures (e.g., WOTS), few-time
+        signatures (e.g., FORS), and Merkle trees that aggregate many such key pairs under a single public key.
+        This tool explores the parameter space of these constructions and the tradeoffs. Users can adjust the
+        parameters and observe the effect on signature size, public key size, signing and verification cost,
+        state management requirements, and the maximum number of signatures per key. It also shows what these
+        changes mean for block space consumption and transaction throughput.
         Figures can be cross-checked against the
         <a href="https://github.com/BlockstreamResearch/SPHINCS-Parameters" target="_blank" rel="noopener">SPHINCS-Parameters</a>
-        scripts. All figures are worst case. For example, an unbalanced tree assumes the deepest leaf.
+        scripts.
       </p>
     </section>
 
